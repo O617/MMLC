@@ -93,7 +93,7 @@ class InternVitTransformerLayer(TransformerLayer):
 
         attention_output = self.drop_path1((attention_output_with_bias[0] + attention_output_with_bias[1]) * self.ls1)
         attention_output_with_bias = (attention_output, None)
-
+        # torch.distributed.breakpoint()
         with self.bias_dropout_add_exec_handler():
             hidden_states = self.self_attn_bda(self.training, self.config.bias_dropout_fusion)(
                 attention_output_with_bias, residual, self.hidden_dropout
@@ -255,6 +255,7 @@ class InternVisionEmbeddings(nn.Module):
 
         self.num_patches = (self.image_size // self.patch_size) ** 2
         self.num_positions = self.num_patches + 1
+        # self.num_positions = self.num_patches
 
         self.position_embedding = nn.Parameter(torch.randn(1, self.num_positions, self.embed_dim))
 
@@ -272,14 +273,16 @@ class InternVisionEmbeddings(nn.Module):
         batch_size, _, height, width = patch_embeds.shape
         patch_embeds = patch_embeds.flatten(2).transpose(1, 2)
         class_embeds = self.class_embedding.expand(batch_size, 1, -1).to(target_dtype)
-        embeddings = torch.cat([class_embeds, patch_embeds], dim=1)
-        position_embedding = torch.cat([
-            self.position_embedding[:, :1, :],
-            self._get_pos_embed(self.position_embedding[:, 1:, :], height, width)
-        ], dim=1)
+        # embeddings = torch.cat([class_embeds, patch_embeds], dim=1)
+        # position_embedding = torch.cat([
+        #     self.position_embedding[:, :1, :],
+        #     self._get_pos_embed(self.position_embedding[:, 1:, :], height, width)
+        # ], dim=1)
+        embeddings = patch_embeds
+        position_embedding = self._get_pos_embed(self.position_embedding[:, :1, :], height, width)
         embeddings = embeddings + position_embedding.to(target_dtype)
         if get_args().context_parallel_size is not None and get_args().context_parallel_size > 1 and get_args().context_parallel_algo == "ulysses_cp_algo":
-            split_gather_sizes = cal_split_sizes(self.num_positions, get_args().context_parallel_size)
+            split_gather_sizes = cal_split_sizes(self.num_positions - 1, get_args().context_parallel_size)
             embeddings = split_forward_gather_backward(embeddings, mpu.get_context_parallel_group(),
                                                     dim=1, grad_scale="down", split_sizes=split_gather_sizes)
         return embeddings
@@ -384,7 +387,8 @@ class InternViT(MultiModalModule):
         return x
     
     def extract_feature(self, hidden_states):
-        vit_embeds = hidden_states[:, 1:, :]
+        # vit_embeds = hidden_states[:, 1:, :]
+        vit_embeds = hidden_states
         h = w = int(vit_embeds.shape[1] ** 0.5)
         vit_embeds = vit_embeds.reshape(vit_embeds.shape[0], h, w, -1)
         vit_embeds = self.pixel_shuffle(vit_embeds, scale_factor=self.downsample_ratio)
@@ -421,9 +425,8 @@ class InternViT(MultiModalModule):
             attention_mask = attention_mask < 0.5
 
         encoder_outputs = self.encoder(hidden_states, attention_mask)
-        
         if get_args().context_parallel_size is not None and get_args().context_parallel_size > 1 and get_args().context_parallel_algo == "ulysses_cp_algo":
-            split_gather_sizes = cal_split_sizes(self.seq_length, get_args().context_parallel_size)
+            split_gather_sizes = cal_split_sizes(self.seq_length - 1, get_args().context_parallel_size)
             encoder_outputs = gather_forward_split_backward(encoder_outputs, mpu.get_context_parallel_group(),
                                                             dim=0, grad_scale="up", gather_sizes=split_gather_sizes)
 

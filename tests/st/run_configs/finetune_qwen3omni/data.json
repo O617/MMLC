@@ -2,7 +2,7 @@
     "dataset_param": {
         "dataset_type": "huggingface",
         "preprocess_parameters": {
-            "model_name_or_path": "/home/ci_resource/models/Qwen3-Omni-30B-A3B-Instruct",
+            "model_name_or_path": "/home/lijia/hybrid_parallel/MindSpeed-MM/ckpt/hf_path/Qwen3VL-2B-Instruct",
             "use_fast_tokenizer": true,
             "split_special_tokens": false,
             "use_audio_in_video": false,
@@ -15,11 +15,12 @@
             "audio_sampling_rate": 16000
         },
         "basic_parameters": {
-            "template": "qwen3_omni",
-            "dataset_dir": "./data",
-            "dataset": "/home/ci_resource/data/qwen2.5vl/mllm_format_llava_instruct_data.json",
-            "cache_dir": "./data/cache_dir",
-            "overwrite_cache": true,
+            "template": "qwen3_vl_nothink",
+            "dataset_dir": "/home/lijia/develop/dataset/Intern-VL-Chat/",
+            "dataset": "/home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data_qwen.json",
+            "cache_dir": "/data1/cache_dir",
+            "enable_thinking": false,
+            "overwrite_cache": false,
             "train_on_prompt": false,
             "mask_history": false,
             "preprocessing_batch_size": 1000,

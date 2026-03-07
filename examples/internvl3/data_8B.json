@@ -2,8 +2,8 @@
     "dataset_param": {
         "dataset_type": "multimodal",
         "basic_parameters": {
-            "data_path": "/path/json_path",
-            "data_folder": "/path/root_path",
+            "data_path": "/home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json",
+            "data_folder": "/home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d",
             "repeat_time": 1
         },
         "preprocess_parameters": {
@@ -20,7 +20,7 @@
         "tokenizer_config": {
             "hub_backend": "hf",
             "autotokenizer_name": "AutoTokenizer",
-            "from_pretrained": "OpenGVLab/InternVL3-8B",
+            "from_pretrained": "/home/lijia/develop/MindSpeed-MM/ckpt/hf_path/InternVL3-1B",
             "add_eos_token": false,
             "use_fast": false
         },

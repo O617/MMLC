@@ -1,4 +1,4 @@
-sharding_size: auto
+sharding_size: 1
 reshard_after_forward: True
 param_dtype: "bf16"
 reduce_dtype: "fp32"

@@ -20,7 +20,8 @@ MASTER_ADDR=$(head -n1 $HOSTFILE | awk '{print $1;}')  # 获取hostfile第一行
 MASTER_PORT=6000
 NODE_ADDR=`hostname -I | awk '{for(i=1;i<=NF;i++)print $i}' | grep ${MASTER_ADDR%.*}. | awk -F " " '{print$1}'`  # 获取本机IP
 NODE_RANK=$(awk '{ranks[$1]=(FNR-1);}END{print ranks["'$NODE_ADDR'"];}' $HOSTFILE)
-NNODES=$(cat $HOSTFILE | wc -l)
+# NNODES=$(cat $HOSTFILE | wc -l)
+NNODES=1
 WORLD_SIZE=$(($NPUS_PER_NODE*$NNODES))
 echo $MASTER_ADDR
 echo $NODE_ADDR
@@ -30,7 +31,7 @@ echo $NNODES
 MBS=1
 GRAD_ACC_STEP=64
 TP=1
-PP=4
+PP=1
 CP=1
 DP=$(($WORLD_SIZE/$TP/$PP/$CP))
 GBS=$(($MBS*$GRAD_ACC_STEP*$DP))
@@ -50,10 +51,11 @@ MM_ARGS="
 DISTRIBUTED_ARGS="
     --nproc_per_node $NPUS_PER_NODE \
     --nnodes $NNODES \
-    --node_rank $NODE_RANK \
-    --master_addr $MASTER_ADDR \
-    --master_port $MASTER_PORT
 "
+    # --node_rank $NODE_RANK \
+    # --master_addr $MASTER_ADDR \
+    # --master_port $MASTER_PORT
+
 
 GPT_ARGS="
     --tensor-model-parallel-size ${TP} \
@@ -87,7 +89,7 @@ GPT_ARGS="
     --load $LOAD_PATH \
     --variable-seq-lengths \
     --normalization RMSNorm \
-    --num-workers 4 \
+    --num-workers 8 \
 "
 # To ensure code security, configure trust_remote_code to default to False.
 # Users need to add the following parameter and ensure the security of the models and data they download.

@@ -986,7 +986,6 @@ class Qwen3VLModel(Qwen3VLPreTrainedModel):
                     delta = delta.repeat_interleave(batch_size // delta.shape[0], dim=0)
                 position_ids = position_ids.add(delta)
                 position_ids = position_ids.unsqueeze(0).expand(3, -1, -1)
-
         outputs = self.language_model(
             input_ids=None,
             position_ids=position_ids,

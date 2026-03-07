@@ -30,7 +30,7 @@ from mindspeed.core.context_parallel.model_parallel_utils import (
     get_context_parallel_for_hybrid_ring_global_ranks,
     get_context_parallel_for_hybrid_ring_rank
 )
-from mindspeed.core.context_parallel.ring_context_parallel.ring_context_parallel import ringattn_context_parallel_tnd_general, ringattn_context_parallel
+# from mindspeed.core.context_parallel.ring_context_parallel.ring_context_parallel import ringattn_context_parallel_tnd_general, ringattn_context_parallel
 from mindspeed.utils import get_actual_seq_len
 
 from mindspeed_mm.models.common.communications import cal_split_sizes, cal_split_sizes_multi, gather_forward_split_backward, split_forward_gather_backward

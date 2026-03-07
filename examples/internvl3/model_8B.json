@@ -11,8 +11,8 @@
     "img_context_token_id": 151667,
     "text_decoder": {
         "model_id": "internllm",
-	    "num_layers": 28,
-	    "pipeline_num_layers": [6, 8, 8, 6],
+	    "num_layers": 14,
+	    "pipeline_num_layers": [14],
 	    "hidden_size": 3584,
 	    "ffn_hidden_size": 18944,
 	    "num_attention_heads": 28,
@@ -47,8 +47,8 @@
     "image_encoder": {
         "vision_encoder": {
             "model_id": "InternViT",
-            "num_layers": 24,
-            "pipeline_num_layers": [24, 0, 0, 0],
+            "num_layers": 12,
+            "pipeline_num_layers": [12],
             "hidden_size": 1024,
             "ffn_hidden_size": 4096,
             "num_attention_heads": 16,
