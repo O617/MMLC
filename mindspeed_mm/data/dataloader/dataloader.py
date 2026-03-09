@@ -317,6 +317,7 @@ def prepare_sampler_dataloader(
             drop_last=drop_last,
             consumed_samples=consumed_samples,
             data_sharding=data_sharding,
+            seed=seed,
         )
         if collate_param is None:
             collate_fn = None

@@ -6,6 +6,7 @@ from typing import Dict, Any
 
 from datasets import Dataset
 import torch
+import os
 
 import mindspeed.megatron_adaptor
 from mindspeed.megatron_adaptor import get_mindspeed_args
@@ -25,7 +26,10 @@ from mindspeed_mm.utils.hetero_parallel import change_parallel_state, apply_hete
 from mindspeed_mm.utils.utils import EncoderBalanceComm
 from mindspeed_mm.utils.hetero_parallel import hetero_align_config
 from mindspeed_mm.utils.utils import compute_token_level_loss
+from scheduler import Scheduler
 mindspeed_args = get_mindspeed_args()
+data_scheduler = None
+hybrid_parallel = os.environ.get("HYBRID_PARALLEL")
 if hasattr(mindspeed_args, "ai_framework") and mindspeed_args.ai_framework == "mindspore" and mindspeed_args.optimization_level >= 0:
     import mindspeed_mm.mindspore.mindspore_adaptor
 
@@ -52,6 +56,10 @@ def model_provider(pre_process=True, post_process=True, modules=None):
         apply_hetero_parallel_hooks(model)
 
     _apply_freezing(model, vlm_config)
+
+    global data_scheduler
+    other_parallel_group_size = mpu.get_tensor_model_parallel_world_size() * mpu.get_pipeline_model_parallel_world_size()
+    data_scheduler = Scheduler(torch.distributed.get_world_size(), other_parallel_group_size, model.img_context_token_id, get_args().cp_window_size)
 
     return model
 
@@ -146,6 +154,8 @@ def get_batch(data_iterator, is_vit_last_stage=False):
             mpu.get_data_parallel_group())
     else:
         batch['tranfer'] = None
+    if hybrid_parallel is not None and hybrid_parallel == "True":
+        batch = data_scheduler.next_batch(batch)
     return batch
 
 

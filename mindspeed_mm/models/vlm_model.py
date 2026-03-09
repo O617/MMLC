@@ -472,8 +472,8 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
             labels = split_forward_gather_backward_with_megatron_cp(shift_labels,
                                                                     get_context_parallel_group_for_hybrid_ring(), dim=1)
 
-        loss = tensor_parallel.vocab_parallel_cross_entropy(logits.float(), labels)
-        loss = loss * (labels > -1)
+        loss_ = tensor_parallel.vocab_parallel_cross_entropy(logits.float(), labels)
+        loss = loss_ * (labels > -1)
 
         # total_loss shape : [batch size, s]
         total_loss = gather_forward_split_backward(loss, mpu.get_context_parallel_group(), dim=-1)
@@ -593,6 +593,9 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
     ) -> Union[Dict[str, torch.Tensor], torch.Tensor]:
 
         # hetero pipeline use
+        hetero_pp = False
+        if get_args().hetero_parallel and mpu.get_pipeline_model_parallel_world_size() > 1:
+            hetero_pp = True
         hetero_pp = hasattr(mpu, "_IS_HETERO_PP_MOUDLE") and mpu._IS_HETERO_PP_MOUDLE
 
         # MM_GRPO use, if llm_only is True, directly get vit_embeds
@@ -682,7 +685,6 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
 
                         loss_dict["loss"] = loss
                         loss_dict["token_nums"] = token_nums
-
                         return {
                             "loss_dict": loss_dict,
                             "logits": output

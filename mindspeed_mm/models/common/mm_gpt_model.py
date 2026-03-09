@@ -249,8 +249,9 @@ class MMGPTModel(LanguageModule):
             if get_args().context_parallel_algo == "ulysses_cp_algo":
                 input_ids = split_forward_gather_backward(input_ids, mpu.get_context_parallel_group(), 1,
                                                             split_gather_sizes, "down")
-                position_ids = split_forward_gather_backward(position_ids, mpu.get_context_parallel_group(), 2,
-                                                            split_gather_sizes, "down")
+                if position_ids is not None:
+                    position_ids = split_forward_gather_backward(position_ids, mpu.get_context_parallel_group(), 2,
+                                                                split_gather_sizes, "down")
                 if self.pre_process:
                     decoder_input = split_forward_gather_backward(decoder_input, mpu.get_context_parallel_group(), 0,
                                                                 split_gather_sizes, "down")

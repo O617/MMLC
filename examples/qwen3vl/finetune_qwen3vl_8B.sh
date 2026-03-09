@@ -24,6 +24,24 @@ NNODES=1
 NODE_RANK=0
 WORLD_SIZE=$(($NPUS_PER_NODE*$NNODES))
 
+
+MM_DATA="./examples/qwen3vl/data_8B.json"
+MM_MODEL="./examples/qwen3vl/model_8B.json"
+MM_TOOL="./mindspeed_mm/tools/tools.json"
+LOAD_PATH="ckpt/mm_path/Qwen3-VL-8B-Instruct"
+SAVE_PATH="save_dir"
+FSDP2_PATH="./examples/qwen3vl/fsdp2_config.yaml"
+
+TP=1
+PP=1
+CP=2
+MBS=1
+GRAD_ACC_STEP=1
+SEQ_LEN=1024
+DP=$(($WORLD_SIZE/$TP/$PP/$CP))
+GBS=$(($MBS*$GRAD_ACC_STEP*$DP))
+
+
 DISTRIBUTED_ARGS="
     --nproc_per_node $NPUS_PER_NODE \
     --nnodes $NNODES \

@@ -732,6 +732,56 @@ def train(
     return iteration, num_floating_point_operations_so_far
 
 
+class GradientMonitor:
+    def __init__(self, model):
+        self.model = model
+        self.hooks = []
+        self.nan_count = 0
+        
+    def register_hooks(self):
+        """注册梯度检查钩子"""
+        for name, module in self.model.named_modules():
+            if len(list(module.parameters())) > 0:
+                hook = module.register_full_backward_hook(self._check_gradient)
+                self.hooks.append((name, hook))
+        return self
+    
+    def _check_gradient(self, module, grad_input, grad_output):
+        """检查单个模块的梯度"""
+        module_name = module.__class__.__name__
+        # 检查所有梯度
+        for i, grad in enumerate(grad_input):
+            if grad is not None and torch.isnan(grad).any():
+                self.nan_count += 1
+                print(f"[{self.nan_count}] NaN in {module_name}.grad_input[{i}]")
+                return
+        
+        for i, grad in enumerate(grad_output):
+            if grad is not None and torch.isnan(grad).any():
+                self.nan_count += 1
+                print(f"[{self.nan_count}] NaN in {module_name}.grad_output[{i}]")
+                return
+        
+        for name, param in module.named_parameters():
+            if param.grad is not None and torch.isnan(param.grad).any():
+                self.nan_count += 1
+                print(f"[{self.nan_count}] NaN in {module_name}.{name}.grad")
+                return
+    
+    def remove_hooks(self):
+        """移除所有钩子"""
+        for name, hook in self.hooks:
+            hook.remove()
+        self.hooks.clear()
+    
+    def __enter__(self):
+        self.register_hooks()
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.remove_hooks()
+
+
 @train_step_decorator
 def train_step(
         forward_step_func, data_iterator, model, optimizer, opt_param_scheduler, config, call_backs
@@ -753,6 +803,7 @@ def train_step(
         get_forward_backward_func = hetero_pp.hp_get_forward_backward_func
 
     forward_backward_func = get_forward_backward_func()
+
     losses_reduced = forward_backward_func(
         forward_step_func=forward_step_func,
         data_iterator=data_iterator,
@@ -1046,8 +1097,8 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
                     log_string += ' {}: {:.6E} |'.format(key, avg)
                 total_loss_dict[key] = torch.tensor([0.0], dtype=torch.float, device='cuda')
         log_string += ' loss scale: {:.1f} |'.format(loss_scale)
-        if grad_norm is not None:
-            log_string += ' grad norm: {:.3f} |'.format(grad_norm)
+        # if grad_norm is not None:
+        #     log_string += ' grad norm: {:.3f} |'.format(grad_norm)
         if num_zeros_in_grad is not None:
             log_string += ' num zeros: {:.1f} |'.format(num_zeros_in_grad)
         if params_norm is not None:
