@@ -459,17 +459,29 @@ class Scheduler:
         padded_seqlens = [pad_len_to(s, cp_size * 2) for s in real_seqlens]  # pad each to cp_size*2 multiple
 
         # cu_seqlens must be standard cumulative-sum WITH leading 0: [0, len1, len1+len2, ...]
-        # This is required by _apply_rotary_pos_emb_thd and ring_context_parallel
-        real_cumsum = [0]
         padded_cumsum = [0]
-        for r, p in zip(real_seqlens, padded_seqlens):
-            real_cumsum.append(real_cumsum[-1] + r)
+        for p in padded_seqlens:
             padded_cumsum.append(padded_cumsum[-1] + p)
 
-        cu_seqlens_q = torch.tensor(real_cumsum, dtype=torch.int32).npu()
-        cu_seqlens_q_padded = torch.tensor(padded_cumsum, dtype=torch.int32).npu()
         total_padded_len = padded_cumsum[-1]
         max_padded_seqlen = max(padded_seqlens)
+
+        # Two different cu_seqlens are needed for the MindSpeed ring attention path:
+        #
+        # 1. cu_seqlens_q (used by rotary embedding via _apply_rotary_pos_emb_thd):
+        #    That function always does `cu_seqlens // cp_size` then splits the FULL
+        #    packed tensor by the resulting seqlens. So we must pre-multiply by cp_size
+        #    so that after division the seqlens equal padded_seqlens and sum to
+        #    total_padded_len (matching the actual tensor dim-0 size).
+        #
+        # 2. cu_seqlens_q_padded (used by ring attention in AttentionWithCp.forward):
+        #    Ring attention does `cu_seqlens_q_padded // cp_size` to get the per-rank
+        #    chunk boundaries. This needs the real padded cumsum so that each chunk
+        #    size = padded_seqlen_i / cp_size.
+        cu_seqlens_q = torch.tensor(
+            [v * cp_size for v in padded_cumsum], dtype=torch.int32
+        ).npu()
+        cu_seqlens_q_padded = torch.tensor(padded_cumsum, dtype=torch.int32).npu()
 
         # --- Image patch mask (unchanged logic) ---
         img_token_mask = torch.eq(databatch['input_ids'], self.img_context_token_id)
@@ -507,12 +519,12 @@ class Scheduler:
                     new_databatch[key] = value_tensor.contiguous()
             new_databatch["packed_seq_params"] = PackedSeqParams(
                 qkv_format="thd",                           # must be 'thd', not 'tnd'
-                cu_seqlens_q=cu_seqlens_q,                   # real lengths, with leading 0
+                cu_seqlens_q=cu_seqlens_q,                   # padded_cumsum * cp_size (for rotary)
                 cu_seqlens_kv=cu_seqlens_q,
-                cu_seqlens_q_padded=cu_seqlens_q_padded,     # padded lengths, with leading 0
+                cu_seqlens_q_padded=cu_seqlens_q_padded,     # padded_cumsum (for ring attention)
                 cu_seqlens_kv_padded=cu_seqlens_q_padded,
-                max_seqlen_q=max_padded_seqlen,
-                max_seqlen_kv=max_padded_seqlen,
+                max_seqlen_q=max_padded_seqlen * cp_size,    # rotary freq table size must cover full_seqlen
+                max_seqlen_kv=max_padded_seqlen * cp_size,
             )
         else:
             max_local_len = max_padded_seqlen
