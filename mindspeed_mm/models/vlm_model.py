@@ -672,6 +672,7 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
                 attention_mask=attention_mask,
                 decoder_input=input_embeds,
                 labels=None,
+                packed_seq_params=packed_seq_params,
                 inference_params=inference_params,
                 extra_block_kwargs=extra_block_kwargs,
             )

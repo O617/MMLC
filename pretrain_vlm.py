@@ -27,6 +27,7 @@ from mindspeed_mm.utils.utils import EncoderBalanceComm
 from mindspeed_mm.utils.hetero_parallel import hetero_align_config
 from mindspeed_mm.utils.utils import compute_token_level_loss
 from scheduler import Scheduler
+from profiler import MLLMProfiler
 mindspeed_args = get_mindspeed_args()
 data_scheduler = None
 hybrid_parallel = os.environ.get("HYBRID_PARALLEL")
@@ -50,6 +51,7 @@ def model_provider(pre_process=True, post_process=True, modules=None):
     _configure_modules(vlm_config, modules)
 
     model = VLMModel(vlm_config)
+    # MLLMProfiler("InternVL", model, get_args(),)
 
     if args.hetero_parallel:
         print_rank_0("apply hetero parallel ...")
