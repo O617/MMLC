@@ -1,8 +1,0 @@
-transformers==4.57.3
-torchaudio==2.7.1
-librosa
-soundfile
-sox
-onnxruntime
-gradio
-einops

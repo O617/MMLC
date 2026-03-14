@@ -1,1 +1,0 @@
-examples/hunyuanvideo_1.5/i2v/1.jpg
