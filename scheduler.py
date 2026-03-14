@@ -452,12 +452,26 @@ class Scheduler:
         local_data_id = self.data_dict[str(self.group_id)]
         # dict_keys(['pixel_values', 'image_flags', 'input_ids', 'labels', 'attention_mask', 'tranfer'])
         local_data_len = self.data_len[local_data_id]
-        data_len_tensor = torch.tensor(local_data_len)
-        data_len_cumsum = data_len_tensor.cumsum(dim=0).npu()
         cp_size = len(local_rank_id)
-        data_len_pad_tensor = pad_len_to(data_len_tensor, cp_size * 2)
-        data_len_pad_cumsum = data_len_pad_tensor.cumsum(dim=0).npu() 
-        max_local_len = pad_len_to(int(local_data_len.max()), cp_size * 2)
+
+        # --- Compute real and padded sequence lengths ---
+        real_seqlens = local_data_len.tolist()                         # per-subsequence real token count
+        padded_seqlens = [pad_len_to(s, cp_size * 2) for s in real_seqlens]  # pad each to cp_size*2 multiple
+
+        # cu_seqlens must be standard cumulative-sum WITH leading 0: [0, len1, len1+len2, ...]
+        # This is required by _apply_rotary_pos_emb_thd and ring_context_parallel
+        real_cumsum = [0]
+        padded_cumsum = [0]
+        for r, p in zip(real_seqlens, padded_seqlens):
+            real_cumsum.append(real_cumsum[-1] + r)
+            padded_cumsum.append(padded_cumsum[-1] + p)
+
+        cu_seqlens_q = torch.tensor(real_cumsum, dtype=torch.int32).npu()
+        cu_seqlens_q_padded = torch.tensor(padded_cumsum, dtype=torch.int32).npu()
+        total_padded_len = padded_cumsum[-1]
+        max_padded_seqlen = max(padded_seqlens)
+
+        # --- Image patch mask (unchanged logic) ---
         img_token_mask = torch.eq(databatch['input_ids'], self.img_context_token_id)
         img_token_per_seq = torch.sum(img_token_mask, dim=-1)
         img_token_sum = torch.sum(img_token_per_seq)
@@ -476,13 +490,13 @@ class Scheduler:
                     continue
                 if key in ['attention_mask', 'labels', 'input_ids']:
                     value_tensor = databatch[key][local_data_id]
-                    bsz, pad_seq_len = value_tensor.shape if value_tensor.dim() == 2 else (1, value_tensor.shape[0])
-                    new_value_tensor = torch.zeros(data_len_pad_cumsum[-1], dtype=value_tensor.dtype, device=value_tensor.device)
+                    # Allocate padded TND buffer and place each subsequence at padded offsets
+                    new_value_tensor = torch.zeros(total_padded_len, dtype=value_tensor.dtype, device=value_tensor.device)
                     for data_idx in range(value_tensor.shape[0]):
-                        start = 0 if data_idx == 0 else data_len_pad_cumsum[data_idx - 1]
-                        end = start + local_data_len[data_idx]
-                        new_value_tensor[start:end] = (
-                            value_tensor[data_idx, :local_data_len[data_idx]]
+                        start = padded_cumsum[data_idx]
+                        real_len = real_seqlens[data_idx]
+                        new_value_tensor[start:start + real_len] = (
+                            value_tensor[data_idx, :real_len]
                         )
                     new_databatch[key] = new_value_tensor.unsqueeze(0)
                 elif key in ['pixel_values', 'image_flags']:
@@ -492,13 +506,16 @@ class Scheduler:
                     value_tensor = databatch[key][local_data_id]
                     new_databatch[key] = value_tensor.contiguous()
             new_databatch["packed_seq_params"] = PackedSeqParams(
-                qkv_format="tnd",
-                cu_seqlens_q=data_len_pad_cumsum,
-                cu_seqlens_kv=data_len_pad_cumsum,
-                max_seqlen_q=max_local_len,
-                max_seqlen_kv=max_local_len,
+                qkv_format="thd",                           # must be 'thd', not 'tnd'
+                cu_seqlens_q=cu_seqlens_q,                   # real lengths, with leading 0
+                cu_seqlens_kv=cu_seqlens_q,
+                cu_seqlens_q_padded=cu_seqlens_q_padded,     # padded lengths, with leading 0
+                cu_seqlens_kv_padded=cu_seqlens_q_padded,
+                max_seqlen_q=max_padded_seqlen,
+                max_seqlen_kv=max_padded_seqlen,
             )
         else:
+            max_local_len = max_padded_seqlen
             for key in databatch.keys():
                 if databatch[key] is None:
                     new_databatch[key] = databatch[key]
@@ -519,7 +536,7 @@ class Scheduler:
                 else:
                     value_tensor = databatch[key][local_data_id]
                     new_databatch[key] = value_tensor.contiguous()
-        
+
         return new_databatch
     
     @timing
