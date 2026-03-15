@@ -63,6 +63,16 @@ def model_provider(pre_process=True, post_process=True, modules=None):
     other_parallel_group_size = mpu.get_tensor_model_parallel_world_size() * mpu.get_pipeline_model_parallel_world_size()
     data_scheduler = Scheduler(torch.distributed.get_world_size(), other_parallel_group_size, model.img_context_token_id, get_args().cp_window_size)
 
+    if hybrid_parallel is not None and hybrid_parallel == "True":
+        from megatron.core.num_microbatches_calculator import reconfigure_num_microbatches_calculator
+        reconfigure_num_microbatches_calculator(
+            rank=torch.distributed.get_rank(),
+            rampup_batch_size=None,
+            global_batch_size=args.global_batch_size,
+            micro_batch_size=args.micro_batch_size,
+            data_parallel_size=1,
+        )
+
     return model
 
 
