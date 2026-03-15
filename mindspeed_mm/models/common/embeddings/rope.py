@@ -133,12 +133,13 @@ class DynamicRotaryEmbedding(RotaryEmbedding):
         rotary_base = rotary_base * ((factor * seq_len / max_position_embeddings) - (factor - 1)) ** (dim / (dim - 2))
         self.inv_freq = 1.0 / (rotary_base ** (torch.arange(0, dim, 2, dtype=torch.float32, device=device) / dim))
 
-    def forward(self, max_seq_len: int, offset: int = 0):
+    def forward(self, max_seq_len: int, offset: int = 0, packed_seq: bool = False):
         """Forward pass of RoPE embedding.
 
         Args:
             max_seq_len (int): Maximum size of sequence
             offset (int, optional): _description_. Defaults to 0.
+            packed_seq (bool, optional): Whether to use packed sequence. Defaults to False.
 
         Returns:
             Tensor: Embeddings after applying RoPE.
@@ -165,7 +166,7 @@ class DynamicRotaryEmbedding(RotaryEmbedding):
             )
         # emb [seq_length, .., dim]
         emb = emb[:, None, None, :]
-        if parallel_state.get_context_parallel_world_size() > 1 and get_args().context_parallel_algo == "ulysses_cp_algo":
+        if parallel_state.get_context_parallel_world_size() > 1 and get_args().context_parallel_algo == "ulysses_cp_algo" and not packed_seq:
             # slice rotary_pos_emb along sequence dimension and select the partition of the current CP rank
             emb = get_pos_emb_on_this_cp_rank(emb, 0)
         return emb
