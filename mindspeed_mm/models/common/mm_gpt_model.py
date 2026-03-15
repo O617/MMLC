@@ -304,10 +304,24 @@ class MMGPTModel(LanguageModule):
                 sin = torch.cat([m[:, i % 3, :, :] for i, m in enumerate(sin.split(mrope_section, dim=-1))], dim=-1).unsqueeze(2)
                 rotary_pos_emb = torch.cat([cos, sin], dim=0)
         elif self.position_embedding_type == 'rope':
-            rotary_seq_len = self.rotary_pos_emb.get_rotary_seq_len(
-                None, self.decoder, decoder_input, self.config, inference_params
+            packed_seq = (
+                packed_seq_params is not None
+                and packed_seq_params.qkv_format == 'thd'
             )
-            rotary_pos_emb = self.rotary_pos_emb(rotary_seq_len)
+            if packed_seq:
+                # For packed sequences, the freq table must cover the longest
+                # individual subsequence (not the total packed length).
+                # Pass packed_seq=True to skip CP-slicing of the freq table;
+                # rotary will be applied per-subsequence in _apply_rotary_pos_emb_thd.
+                rotary_seq_len = max(
+                    packed_seq_params.max_seqlen_q,
+                    packed_seq_params.max_seqlen_kv,
+                )
+            else:
+                rotary_seq_len = self.rotary_pos_emb.get_rotary_seq_len(
+                    None, self.decoder, decoder_input, self.config, inference_params
+                )
+            rotary_pos_emb = self.rotary_pos_emb(rotary_seq_len, packed_seq=packed_seq)
 
         # Run decoder.
         hidden_states = self.decoder(
