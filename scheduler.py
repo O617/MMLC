@@ -554,7 +554,12 @@ class Scheduler:
                 if key in ['attention_mask', 'labels', 'input_ids']:
                     value_tensor = databatch[key][local_data_id]
                     # Allocate padded TND buffer and place each subsequence at padded offsets
-                    new_value_tensor = torch.zeros(total_padded_len, dtype=value_tensor.dtype, device=value_tensor.device)
+                    # For labels, padding must use -100 (IGNORE_INDEX) so that padded
+                    # positions are excluded from loss computation. Using 0 would cause
+                    # them to be treated as valid tokens (labels > -1), inflating
+                    # token_nums and diluting the loss.
+                    fill_value = -100 if key == 'labels' else 0
+                    new_value_tensor = torch.full((total_padded_len,), fill_value, dtype=value_tensor.dtype, device=value_tensor.device)
                     seq_dim = value_tensor.shape[1] if value_tensor.dim() == 2 else value_tensor.shape[0]
                     for data_idx in range(value_tensor.shape[0]):
                         start = padded_cumsum[data_idx]
@@ -588,7 +593,8 @@ class Scheduler:
                     value_tensor = databatch[key][local_data_id]
                     bsz, pad_seq_len = value_tensor.shape if value_tensor.dim() == 2 else (1, value_tensor.shape[0])
                     if pad_seq_len < max_local_len:
-                        new_value_tensor = torch.zeros([bsz, max_local_len], dtype=value_tensor.dtype, device=value_tensor.device)
+                        fill_value = -100 if key == 'labels' else 0
+                        new_value_tensor = torch.full([bsz, max_local_len], fill_value, dtype=value_tensor.dtype, device=value_tensor.device)
                         new_value_tensor[:, :pad_seq_len] = value_tensor
                         value_tensor = new_value_tensor
                     else:
