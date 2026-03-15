@@ -86,6 +86,11 @@ class Scheduler:
                 self.rank_dicts[other_parallel_group_id][str(group_id)] = [group_rank + other_parallel_group_id for group_rank in group_ranks]
             cumsum += group_size
 
+    def get_num_groups(self):
+        """Return the number of CP groups in the current batch."""
+        rank_dict_local = self.rank_dicts[self.rank % self.other_parallel_group_size]
+        return len(rank_dict_local)
+
     def get_from_group_pool(self, rank_list):
         group_uid = self.get_group_uid(rank_list)
         if group_uid in self.group_pool.keys():

@@ -181,6 +181,29 @@ def get_tps(output_tensor):
     return tokens_per_sample
 
 
+def average_losses_for_hybrid_parallel(losses):
+    """Average losses across hybrid parallel groups.
+
+    In hybrid parallel, each CP group processes different data and may have
+    a different CP size. The static DP group spans all ranks that share the
+    same TP/PP position, which is exactly what we need for the all-reduce.
+
+    Strategy: scale each rank's loss by 1/local_cp_size, sum-reduce across
+    the static DP group, then divide by the number of groups. This yields
+    the correct mean over all CP groups:
+        sum_reduce(L_i / cp_i) = sum_i(L_i)  (since cp_i ranks contribute)
+        result / num_groups = mean(L_i)
+    """
+    cp_size = torch.distributed.get_world_size(group=mpu.get_context_parallel_group())
+    num_groups = data_scheduler.get_num_groups()
+    averaged_losses = torch.cat(
+        [loss.clone().detach().view(1) / cp_size for loss in losses])
+    torch.distributed.all_reduce(averaged_losses,
+                                 group=mpu.get_data_parallel_group())
+    averaged_losses = averaged_losses / num_groups
+    return averaged_losses
+
+
 def loss_func(output_tensor):
     """Loss function."""
     args = get_args()
@@ -201,7 +224,10 @@ def loss_func(output_tensor):
         )
 
     loss = loss_dict['loss']
-    averaged_loss = average_losses_across_data_parallel_group([loss])
+    if hybrid_parallel is not None and hybrid_parallel == "True":
+        averaged_loss = average_losses_for_hybrid_parallel([loss])
+    else:
+        averaged_loss = average_losses_across_data_parallel_group([loss])
     loss_dir["loss"] = averaged_loss[0]
     loss = loss.unsqueeze(0).clone()
     return loss / mpu.get_context_parallel_world_size(), loss_dir
