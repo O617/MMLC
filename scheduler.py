@@ -469,18 +469,15 @@ class Scheduler:
         # Two different cu_seqlens are needed for the MindSpeed ring attention path:
         #
         # 1. cu_seqlens_q (used by rotary embedding via _apply_rotary_pos_emb_thd):
-        #    That function always does `cu_seqlens // cp_size` then splits the FULL
-        #    packed tensor by the resulting seqlens. So we must pre-multiply by cp_size
-        #    so that after division the seqlens equal padded_seqlens and sum to
-        #    total_padded_len (matching the actual tensor dim-0 size).
+        #    In MindSpeed, rotary is applied to the FULL packed tensor (before CP split).
+        #    We store the actual padded_cumsum here. The patched rotary function detects
+        #    that seqlens already sum to the tensor size and skips the // cp_size division.
         #
         # 2. cu_seqlens_q_padded (used by ring attention in AttentionWithCp.forward):
         #    Ring attention does `cu_seqlens_q_padded // cp_size` to get the per-rank
         #    chunk boundaries. This needs the real padded cumsum so that each chunk
         #    size = padded_seqlen_i / cp_size.
-        cu_seqlens_q = torch.tensor(
-            [v * cp_size for v in padded_cumsum], dtype=torch.int32
-        ).npu()
+        cu_seqlens_q = torch.tensor(padded_cumsum, dtype=torch.int32).npu()
         cu_seqlens_q_padded = torch.tensor(padded_cumsum, dtype=torch.int32).npu()
 
         # --- Image patch mask (unchanged logic) ---
@@ -523,8 +520,8 @@ class Scheduler:
                 cu_seqlens_kv=cu_seqlens_q,
                 cu_seqlens_q_padded=cu_seqlens_q_padded,     # padded_cumsum (for ring attention)
                 cu_seqlens_kv_padded=cu_seqlens_q_padded,
-                max_seqlen_q=max_padded_seqlen * cp_size,    # rotary freq table size must cover full_seqlen
-                max_seqlen_kv=max_padded_seqlen * cp_size,
+                max_seqlen_q=max_padded_seqlen,
+                max_seqlen_kv=max_padded_seqlen,
             )
         else:
             max_local_len = max_padded_seqlen
