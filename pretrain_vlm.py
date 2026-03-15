@@ -61,7 +61,13 @@ def model_provider(pre_process=True, post_process=True, modules=None):
 
     global data_scheduler
     other_parallel_group_size = mpu.get_tensor_model_parallel_world_size() * mpu.get_pipeline_model_parallel_world_size()
-    data_scheduler = Scheduler(torch.distributed.get_world_size(), other_parallel_group_size, model.img_context_token_id, get_args().cp_window_size)
+    data_scheduler = Scheduler(
+        torch.distributed.get_world_size(),
+        other_parallel_group_size,
+        model.img_context_token_id,
+        get_args().cp_window_size,
+        schedule_mode=os.environ.get("SCHEDULE_MODE", "dynamic"),
+    )
 
     if hybrid_parallel is not None and hybrid_parallel == "True":
         from megatron.core.num_microbatches_calculator import reconfigure_num_microbatches_calculator
@@ -198,8 +204,7 @@ def average_losses_for_hybrid_parallel(losses):
     num_groups = data_scheduler.get_num_groups()
     averaged_losses = torch.cat(
         [loss.clone().detach().view(1) / cp_size for loss in losses])
-    torch.distributed.all_reduce(averaged_losses,
-                                 group=mpu.get_data_parallel_group())
+    torch.distributed.all_reduce(averaged_losses)
     averaged_losses = averaged_losses / num_groups
     return averaged_losses
 

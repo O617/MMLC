@@ -53,7 +53,8 @@ def pad_len_to(data_len, pad_num):
 
 
 class Scheduler:
-    def __init__(self, cluster_size, other_parallel_group_size, img_context_token_id, cp_window_size):
+    def __init__(self, cluster_size, other_parallel_group_size, img_context_token_id, cp_window_size,
+                 schedule_mode="dynamic"):
         self.data_dict = None
         self.hybrid_group = None
         self.cluster_size = cluster_size
@@ -67,6 +68,7 @@ class Scheduler:
         self.cp_window_size = int(cp_window_size) if cp_window_size is not None else 1
         self.dp_group = None
         self.dp_group_ranks = None
+        self.schedule_mode = schedule_mode
 
     def get_group_data(self, group_id):
         assert self.rank_dicts is not None, "Rank dict is not initialized" 
@@ -95,7 +97,7 @@ class Scheduler:
         group_uid = self.get_group_uid(rank_list)
         if group_uid in self.group_pool.keys():
             return self.group_pool[group_uid]
-        group = mpu.create_group(ranks=rank_list, use_local_synchronization=True)
+        group = mpu.create_group(ranks=rank_list, use_local_synchronization=False)
         self.group_pool[group_uid] = group
         return group
 
@@ -451,6 +453,51 @@ class Scheduler:
         
         return group_list, data_list
 
+    def compute_parallel_method_naive(self, databatch):
+        """
+        Naive static-mesh scheduling: fixed CP size, data evenly distributed.
+
+        All groups use the same CP degree (self.cp_window_size), mirroring the
+        standard static CP mesh.  Samples are distributed round-robin across
+        groups so that each group gets approximately batch_size / num_groups
+        samples.  This serves as a baseline for verifying loss correctness
+        against standard (non-hybrid) parallel training.
+
+        Args:
+            databatch: dict containing 'input_ids', 'attention_mask', etc.
+
+        Returns:
+            group_list: list of CP degrees for each group (all equal)
+            data_list: list of sequence index lists assigned to each group
+        """
+        attention_mask = databatch['attention_mask']
+        self.data_len = torch.sum(attention_mask, dim=1) + 1
+        batch_size = self.data_len.shape[0]
+
+        if batch_size == 0:
+            return [], []
+
+        fixed_cp = self.cp_window_size
+        max_available_cp = self.cluster_size // self.other_parallel_group_size
+        num_groups = max_available_cp // fixed_cp
+
+        assert num_groups > 0, (
+            f"Cannot form any group: max_available_cp={max_available_cp}, "
+            f"fixed_cp={fixed_cp}"
+        )
+        assert max_available_cp % fixed_cp == 0, (
+            f"max_available_cp ({max_available_cp}) must be divisible by "
+            f"fixed_cp ({fixed_cp})"
+        )
+
+        # Round-robin distribute samples across groups
+        data_list = [[] for _ in range(num_groups)]
+        for i in range(batch_size):
+            data_list[i % num_groups].append(i)
+
+        group_list = [fixed_cp] * num_groups
+        return group_list, data_list
+
     def get_data(self, databatch):
         data_layout = "TND"
         new_databatch = {}
@@ -561,7 +608,10 @@ class Scheduler:
         if torch.distributed.get_rank() == 0:
             print("Execute Next Batch Function")
         self.data_dict = {}
-        group_list, data_list = self.compute_parallel_method(databatch)
+        if self.schedule_mode == "naive":
+            group_list, data_list = self.compute_parallel_method_naive(databatch)
+        else:
+            group_list, data_list = self.compute_parallel_method(databatch)
 
         self.update_rank_dicts(group_list)
         self.update_group_data_id(data_list)
