@@ -501,9 +501,10 @@ class Scheduler:
                     value_tensor = databatch[key][local_data_id]
                     # Allocate padded TND buffer and place each subsequence at padded offsets
                     new_value_tensor = torch.zeros(total_padded_len, dtype=value_tensor.dtype, device=value_tensor.device)
+                    seq_dim = value_tensor.shape[1] if value_tensor.dim() == 2 else value_tensor.shape[0]
                     for data_idx in range(value_tensor.shape[0]):
                         start = padded_cumsum[data_idx]
-                        real_len = real_seqlens[data_idx]
+                        real_len = min(real_seqlens[data_idx], seq_dim)
                         new_value_tensor[start:start + real_len] = (
                             value_tensor[data_idx, :real_len]
                         )
