@@ -74,6 +74,8 @@ class Scheduler:
     
     def update_rank_dicts(self, group_list, ):
         assert sum(group_list) * self.other_parallel_group_size <= self.cluster_size, "The parallel size of hybrid-parallel group must be less than Cluster Size"
+        # Clear stale entries from previous batches
+        self.rank_dicts = [{}] * self.other_parallel_group_size
         cumsum = 0
         dp_group_ranks = []
         torch.distributed.barrier()
