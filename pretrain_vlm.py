@@ -204,7 +204,26 @@ def average_losses_for_hybrid_parallel(losses):
     num_groups = data_scheduler.get_num_groups()
     averaged_losses = torch.cat(
         [loss.clone().detach().view(1) / cp_size for loss in losses])
+
+    # === DEBUG: before/after all_reduce ===
+    rank = torch.distributed.get_rank()
+    before_reduce = averaged_losses.clone()
+    # === END DEBUG ===
+
     torch.distributed.all_reduce(averaged_losses)
+
+    # === DEBUG ===
+    world_size = torch.distributed.get_world_size()
+    dp_group = mpu.get_data_parallel_group()
+    dp_group_size = torch.distributed.get_world_size(group=dp_group)
+    if rank < 8:
+        print(f"[DEBUG-AVG-HYBRID] rank={rank} cp_size={cp_size} num_groups={num_groups} "
+              f"before_reduce={before_reduce.item():.6f} after_reduce={averaged_losses.item():.6f} "
+              f"final={averaged_losses.item() / num_groups:.6f} "
+              f"world_size={world_size} dp_group_size={dp_group_size} "
+              f"group_id={data_scheduler.group_id}")
+    # === END DEBUG ===
+
     averaged_losses = averaged_losses / num_groups
     return averaged_losses
 
@@ -229,10 +248,30 @@ def loss_func(output_tensor):
         )
 
     loss = loss_dict['loss']
+
+    # === DEBUG: loss diagnostics ===
+    rank = torch.distributed.get_rank()
+    cp_size = mpu.get_context_parallel_world_size()
+    dp_group = mpu.get_data_parallel_group()
+    dp_size = torch.distributed.get_world_size(group=dp_group)
+    num_mb = get_num_microbatches()
+    if rank < 8:  # print for first node
+        print(f"[DEBUG-LOSS] rank={rank} raw_loss={loss.item():.6f} "
+              f"cp_size={cp_size} dp_size={dp_size} num_microbatches={num_mb} "
+              f"hybrid={hybrid_parallel} schedule_mode={data_scheduler.schedule_mode if data_scheduler else 'N/A'}")
+    # === END DEBUG ===
+
     if hybrid_parallel is not None and hybrid_parallel == "True":
         averaged_loss = average_losses_for_hybrid_parallel([loss])
     else:
         averaged_loss = average_losses_across_data_parallel_group([loss])
+
+    # === DEBUG: averaged loss ===
+    if rank < 8:
+        print(f"[DEBUG-LOSS] rank={rank} averaged_loss={averaged_loss[0].item():.6f} "
+              f"loss_for_backward={(loss / cp_size).item():.6f}")
+    # === END DEBUG ===
+
     loss_dir["loss"] = averaged_loss[0]
     loss = loss.unsqueeze(0).clone()
     return loss / mpu.get_context_parallel_world_size(), loss_dir
