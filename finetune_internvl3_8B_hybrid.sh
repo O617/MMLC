@@ -93,6 +93,7 @@ GPT_ARGS="
     --variable-seq-lengths \
     --normalization RMSNorm \
     --num-workers 8 \
+    --calculate-per-sample-loss \
 "
 # To ensure code security, configure trust_remote_code to default to False.
 # Users need to add the following parameter and ensure the security of the models and data they download.

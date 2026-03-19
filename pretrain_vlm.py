@@ -267,6 +267,24 @@ def loss_func(output_tensor):
             loss_dir
         )
 
+    # Per-sample loss for packed (TND) sequences with context parallelism
+    if args.calculate_per_sample_loss and 'mean_per_sample' in loss_dict:
+        loss_for_backward = loss_dict['loss']
+        local_num_tokens = loss_dict['local_num_tokens']
+        mean_per_sample = loss_dict['mean_per_sample']
+
+        # Logging loss: sample-count-weighted average across hybrid/DP groups
+        if hybrid_parallel is not None and hybrid_parallel == "True":
+            averaged_loss = average_losses_for_hybrid_parallel(
+                [mean_per_sample], token_nums=local_num_tokens)
+        else:
+            averaged_loss = average_losses_across_data_parallel_group([mean_per_sample])
+
+        loss_dir["loss"] = averaged_loss if averaged_loss.dim() == 0 else averaged_loss[0]
+
+        # 3-element return → schedules.py len==3 branch
+        return (loss_for_backward.unsqueeze(0).clone(), local_num_tokens, loss_dir)
+
     loss = loss_dict['loss']
     token_nums = loss_dict.get('token_nums', None)
 

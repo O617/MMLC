@@ -432,10 +432,113 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
 
         return loss
 
-    def compute_loss_with_context_parallel(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+    def compute_loss_with_context_parallel(self, logits: torch.Tensor, labels: torch.Tensor, packed_seq_params=None) -> torch.Tensor:
         args = get_args()
         token_nums = None
 
+        # Check if we should use per-subsequence shift for packed (TND) format
+        use_packed_per_sample = (
+            packed_seq_params is not None
+            and args.calculate_per_sample_loss
+            and packed_seq_params.cu_seqlens_q is not None
+        )
+
+        if use_packed_per_sample:
+            # ===== Per-subsequence shift for TND packed sequences =====
+            # cu_seqlens_q contains cumulative sequence lengths: [0, len1, len1+len2, ..., total]
+            cu_seqlens = packed_seq_params.cu_seqlens_q.long()
+            num_subsequences = cu_seqlens.numel() - 1
+            cp_size = mpu.get_context_parallel_world_size()
+
+            # Per-subsequence shift: shift labels within each sub-sequence boundary
+            # to avoid cross-sequence contamination
+            shift_labels = labels.clone()
+            # valid_tokens_per_sample[i] = number of valid (non-ignored) tokens in subsequence i
+            valid_tokens_per_sample = torch.zeros(
+                num_subsequences, dtype=torch.long, device=labels.device
+            )
+
+            for i in range(num_subsequences):
+                start = cu_seqlens[i].item()
+                end = cu_seqlens[i + 1].item()
+                if end - start <= 1:
+                    # Subsequence too short for shift; mark all as ignored
+                    shift_labels[0, start:end] = -100
+                    continue
+                # Left-shift within the subsequence: label[t] = original_label[t+1]
+                shift_labels[0, start:end - 1] = labels[0, start + 1:end]
+                # Last position in the subsequence has no next token
+                shift_labels[0, end - 1] = -100
+                valid_tokens_per_sample[i] = (shift_labels[0, start:end] > -1).sum()
+
+            # token_nums used for the global path (total valid tokens across full sequence)
+            token_nums = (shift_labels > -1).sum(dim=1)
+
+            if args.context_parallel_algo == "megatron_cp_algo":
+                labels = split_forward_gather_backward_with_megatron_cp(
+                    shift_labels, mpu.get_context_parallel_group(), 1
+                )
+            elif args.context_parallel_algo == "hybrid_cp_algo":
+                split_gather_sizes = cal_split_sizes(
+                    shift_labels.shape[-1],
+                    get_context_parallel_for_hybrid_ulysses_world_size()
+                )
+                shift_labels_split = split_forward_gather_backward(
+                    shift_labels, get_context_parallel_group_for_hybrid_ulysses(),
+                    1, split_gather_sizes, "down"
+                )
+                labels = split_forward_gather_backward_with_megatron_cp(
+                    shift_labels_split,
+                    get_context_parallel_group_for_hybrid_ring(), dim=1
+                )
+            else:
+                # ulysses_cp_algo fallback
+                shift_labels_cont = shift_labels[..., :].contiguous()
+                split_gather_sizes = cal_split_sizes(
+                    shift_labels.shape[-1], mpu.get_context_parallel_world_size()
+                )
+                labels = split_forward_gather_backward(
+                    shift_labels_cont, mpu.get_context_parallel_group(), -1,
+                    split_gather_sizes, "down"
+                )
+                if mpu.get_context_parallel_rank() == mpu.get_context_parallel_world_size() - 1:
+                    logits = logits[..., :-1, :].contiguous()
+
+            # Cross-entropy on the local CP chunk
+            loss_ = tensor_parallel.vocab_parallel_cross_entropy(logits.float(), labels)
+            loss = loss_ * (labels > -1)
+
+            # Gather full-sequence loss from all CP ranks
+            # total_loss shape: [1, total_padded_len]
+            total_loss = gather_forward_split_backward(
+                loss, mpu.get_context_parallel_group(), dim=-1
+            )
+
+            # Per-sample aggregation using cu_seqlens boundaries
+            per_sample_mean = torch.zeros(
+                num_subsequences, dtype=total_loss.dtype, device=total_loss.device
+            )
+            for i in range(num_subsequences):
+                start = cu_seqlens[i].item()
+                end = cu_seqlens[i + 1].item()
+                if valid_tokens_per_sample[i] > 0:
+                    per_sample_mean[i] = (
+                        total_loss[0, start:end].sum() / valid_tokens_per_sample[i].float()
+                    )
+
+            # loss_for_backward: mean of per-sample means, divided by cp_size
+            # (schedules.py will multiply back by cp_size)
+            num_samples_tensor = torch.tensor(
+                num_subsequences, dtype=torch.float, device=total_loss.device
+            )
+            loss_for_backward = per_sample_mean.sum() / cp_size
+
+            # Detached per-sample mean for logging
+            mean_per_sample_detached = per_sample_mean.mean().detach()
+
+            return loss_for_backward, num_samples_tensor, mean_per_sample_detached
+
+        # ===== Original logic (non-packed or non-per-sample-loss) =====
         if args.context_parallel_algo == "megatron_cp_algo":
             shift_labels = torch.cat((labels[..., 1:], labels[..., :1]), dim=-1)
             # split and shift labels
@@ -682,10 +785,18 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
                 loss_dict = {}
                 if labels is not None:
                     if mpu.get_context_parallel_world_size() > 1:
-                        loss, token_nums = self.compute_loss_with_context_parallel(output, labels)
-
-                        loss_dict["loss"] = loss
-                        loss_dict["token_nums"] = token_nums
+                        result = self.compute_loss_with_context_parallel(
+                            output, labels, packed_seq_params
+                        )
+                        if get_args().calculate_per_sample_loss and packed_seq_params is not None and getattr(packed_seq_params, 'cu_seqlens_q', None) is not None:
+                            loss_for_backward, local_num_tokens, mean_per_sample = result
+                            loss_dict["loss"] = loss_for_backward
+                            loss_dict["local_num_tokens"] = local_num_tokens
+                            loss_dict["mean_per_sample"] = mean_per_sample
+                        else:
+                            loss, token_nums = result
+                            loss_dict["loss"] = loss
+                            loss_dict["token_nums"] = token_nums
                         return {
                             "loss_dict": loss_dict,
                             "logits": output
