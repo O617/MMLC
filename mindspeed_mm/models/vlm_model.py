@@ -536,7 +536,7 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
             # Detached per-sample mean for logging
             mean_per_sample_detached = per_sample_mean.mean().detach()
 
-            return loss_for_backward, num_samples_tensor, mean_per_sample_detached
+            return loss_for_backward, token_nums.sum(), mean_per_sample_detached
 
         # ===== Original logic (non-packed or non-per-sample-loss) =====
         if args.context_parallel_algo == "megatron_cp_algo":
