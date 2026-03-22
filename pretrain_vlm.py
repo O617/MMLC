@@ -223,14 +223,6 @@ def average_losses_for_hybrid_parallel(losses, token_nums=None):
         torch.distributed.all_reduce(tokens_reduced)
 
         averaged_loss = loss_x_tokens / tokens_reduced
-
-        # === DEBUG ===
-        if rank < 8:
-            print(f"[DEBUG-AVG-HYBRID] rank={rank} cp_size={cp_size} "
-                  f"local_loss={loss_val.item():.6f} local_tokens={tokens_val.item():.0f} "
-                  f"sum_loss_x_tokens={loss_x_tokens.item():.2f} sum_tokens={tokens_reduced.item():.0f} "
-                  f"weighted_avg={averaged_loss.item():.6f} group_id={data_scheduler.group_id}")
-        # === END DEBUG ===
     else:
         # Fallback: unweighted mean (same as before but explicit)
         num_groups = data_scheduler.get_num_groups()
@@ -238,12 +230,6 @@ def average_losses_for_hybrid_parallel(losses, token_nums=None):
             [loss.clone().detach().view(1) / cp_size for loss in losses])
         torch.distributed.all_reduce(averaged_losses)
         averaged_loss = averaged_losses / num_groups
-
-        # === DEBUG ===
-        if rank < 8:
-            print(f"[DEBUG-AVG-HYBRID] rank={rank} cp_size={cp_size} num_groups={num_groups} "
-                  f"unweighted_avg={averaged_loss.item():.6f} group_id={data_scheduler.group_id}")
-        # === END DEBUG ===
 
     return averaged_loss
 
@@ -280,7 +266,17 @@ def loss_func(output_tensor):
         else:
             averaged_loss = average_losses_across_data_parallel_group([mean_per_sample])
 
-        loss_dir["loss"] = averaged_loss if averaged_loss.dim() == 0 else averaged_loss[0]
+        _logging_loss = averaged_loss if averaged_loss.dim() == 0 else averaged_loss[0]
+        loss_dir["loss"] = _logging_loss
+
+        # === DIAG: loss_func TND packed path (rank 0 only) ===
+        if torch.distributed.get_rank() == 0:
+            print(f"[DIAG-LOSSFUNC] rank=0 path=TND_packed "
+                  f"loss_for_backward={loss_for_backward.item():.6f} "
+                  f"local_num_tokens={local_num_tokens.item():.0f} "
+                  f"mean_per_sample={mean_per_sample.item():.6f} "
+                  f"logging_loss={_logging_loss.item():.6f}")
+        # === END DIAG ===
 
         # 3-element return → schedules.py len==3 branch
         return (loss_for_backward.unsqueeze(0).clone(), local_num_tokens, loss_dir)
@@ -288,33 +284,24 @@ def loss_func(output_tensor):
     loss = loss_dict['loss']
     token_nums = loss_dict.get('token_nums', None)
 
-    # === DEBUG: loss diagnostics ===
-    rank = torch.distributed.get_rank()
-    cp_size = mpu.get_context_parallel_world_size()
-    dp_group = mpu.get_data_parallel_group()
-    dp_size = torch.distributed.get_world_size(group=dp_group)
-    num_mb = get_num_microbatches()
-    if rank < 8:  # print for first node
-        token_info = f" token_nums={token_nums.item():.0f}" if token_nums is not None else ""
-        print(f"[DEBUG-LOSS] rank={rank} raw_loss={loss.item():.6f} "
-              f"cp_size={cp_size} dp_size={dp_size} num_microbatches={num_mb} "
-              f"hybrid={hybrid_parallel} schedule_mode={data_scheduler.schedule_mode if data_scheduler else 'N/A'}"
-              f"{token_info}")
-    # === END DEBUG ===
-
     if hybrid_parallel is not None and hybrid_parallel == "True":
         averaged_loss = average_losses_for_hybrid_parallel([loss], token_nums=token_nums)
     else:
         averaged_loss = average_losses_across_data_parallel_group([loss])
 
-    # === DEBUG: averaged loss ===
-    if rank < 8:
-        print(f"[DEBUG-LOSS] rank={rank} averaged_loss={averaged_loss[0].item():.6f} "
-              f"loss_for_backward={(loss / cp_size).item():.6f}")
-    # === END DEBUG ===
-
     loss_dir["loss"] = averaged_loss[0]
     loss = loss.unsqueeze(0).clone()
+
+    # === DIAG: loss_func BSND/default path (rank 0 only) ===
+    if torch.distributed.get_rank() == 0:
+        _token_info = f" token_nums={token_nums.item():.0f}" if token_nums is not None else ""
+        print(f"[DIAG-LOSSFUNC] rank=0 path=BSND_default "
+              f"raw_loss={loss_dict['loss'].item():.6f} "
+              f"logging_loss={averaged_loss[0].item():.6f} "
+              f"loss_for_backward={(loss / mpu.get_context_parallel_world_size()).squeeze().item():.6f}"
+              f"{_token_info}")
+    # === END DIAG ===
+
     return loss / mpu.get_context_parallel_world_size(), loss_dir
 
 
