@@ -568,14 +568,14 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
             # Detached per-sample mean for logging
             mean_per_sample_detached = per_sample_mean.mean().detach()
 
-            # === DIAG: per-sample loss in TND packed path (rank 0 only) ===
-            if torch.distributed.get_rank() == 0:
-                print(f"[DIAG-LOSS] rank=0 path=TND_packed "
-                      f"num_subseq={num_subsequences} cp_size={cp_size} "
-                      f"valid_per_sample={valid_tokens_per_sample.tolist()} "
-                      f"per_sample_mean={per_sample_mean.tolist()} "
-                      f"mean_of_means={mean_per_sample_detached.item():.6f} "
-                      f"loss_for_backward={loss_for_backward.item():.6f}")
+            # === DIAG: per-sample loss in TND packed path (all ranks) ===
+            _diag_rank = torch.distributed.get_rank()
+            print(f"[DIAG-LOSS] rank={_diag_rank} path=TND_packed "
+                  f"num_subseq={num_subsequences} cp_size={cp_size} "
+                  f"valid_per_sample={valid_tokens_per_sample.tolist()} "
+                  f"per_sample_mean={per_sample_mean.tolist()} "
+                  f"mean_of_means={mean_per_sample_detached.item():.6f} "
+                  f"loss_for_backward={loss_for_backward.item():.6f}")
             # === END DIAG ===
 
             return loss_for_backward, token_nums.sum(), mean_per_sample_detached
@@ -632,13 +632,13 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
         #    Calculate per-sample average loss by first computing the average loss of valid tokens within each sample, then averaging across all samples
         if args.calculate_per_sample_loss:
             batch_mean_loss = total_loss.sum(dim=1) / token_nums
-            # === DIAG: per-sample loss in BSND path (rank 0 only) ===
-            if torch.distributed.get_rank() == 0:
-                print(f"[DIAG-LOSS] rank=0 path=BSND "
-                      f"batch_size={total_loss.shape[0]} "
-                      f"token_nums_per_sample={token_nums.tolist()} "
-                      f"per_sample_mean={batch_mean_loss.tolist()} "
-                      f"mean_of_means={batch_mean_loss.mean().item():.6f}")
+            # === DIAG: per-sample loss in BSND path (all ranks) ===
+            _diag_rank = torch.distributed.get_rank()
+            print(f"[DIAG-LOSS] rank={_diag_rank} path=BSND "
+                  f"batch_size={total_loss.shape[0]} "
+                  f"token_nums_per_sample={token_nums.tolist()} "
+                  f"per_sample_mean={batch_mean_loss.tolist()} "
+                  f"mean_of_means={batch_mean_loss.mean().item():.6f}")
             # === END DIAG ===
             total_loss = batch_mean_loss.mean()
             token_nums = token_nums.mean()

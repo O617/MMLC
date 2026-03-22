@@ -607,30 +607,30 @@ class Scheduler:
                     value_tensor = databatch[key][local_data_id]
                     new_databatch[key] = value_tensor.contiguous()
 
-        # === DIAG: rank-0 data format diagnostic ===
-        if self.rank == 0:
-            _labels = new_databatch.get('labels', None)
-            _input_ids = new_databatch.get('input_ids', None)
-            _lbl_shape = tuple(_labels.shape) if _labels is not None else None
-            _ids_shape = tuple(_input_ids.shape) if _input_ids is not None else None
-            _valid_tokens = int((_labels > -1).sum()) if _labels is not None else 0
-            # First 20 non-padding label values for fingerprinting
-            if _labels is not None:
-                _flat = _labels.flatten()
-                _nonpad_mask = _flat > -1
-                _nonpad_vals = _flat[_nonpad_mask][:20].tolist()
-            else:
-                _nonpad_vals = []
-            _has_psp = 'packed_seq_params' in new_databatch and new_databatch['packed_seq_params'] is not None
-            _cu = None
-            if _has_psp:
-                _cu = new_databatch['packed_seq_params'].cu_seqlens_q.tolist()
-            print(f"[DIAG-DATA] rank=0 layout={data_layout} "
-                  f"labels_shape={_lbl_shape} input_ids_shape={_ids_shape} "
-                  f"valid_tokens={_valid_tokens} "
-                  f"real_seqlens={real_seqlens} padded_seqlens={padded_seqlens} "
-                  f"has_packed_seq_params={_has_psp} cu_seqlens={_cu} "
-                  f"first20_labels={_nonpad_vals}")
+        # === DIAG: data format diagnostic (all ranks) ===
+        _labels = new_databatch.get('labels', None)
+        _input_ids = new_databatch.get('input_ids', None)
+        _lbl_shape = tuple(_labels.shape) if _labels is not None else None
+        _ids_shape = tuple(_input_ids.shape) if _input_ids is not None else None
+        _valid_tokens = int((_labels > -1).sum()) if _labels is not None else 0
+        # First 20 non-padding label values for fingerprinting
+        if _labels is not None:
+            _flat = _labels.flatten()
+            _nonpad_mask = _flat > -1
+            _nonpad_vals = _flat[_nonpad_mask][:20].tolist()
+        else:
+            _nonpad_vals = []
+        _has_psp = 'packed_seq_params' in new_databatch and new_databatch['packed_seq_params'] is not None
+        _cu = None
+        if _has_psp:
+            _cu = new_databatch['packed_seq_params'].cu_seqlens_q.tolist()
+        print(f"[DIAG-DATA] rank={self.rank} layout={data_layout} mode={self.schedule_mode} "
+              f"group_id={self.group_id} "
+              f"labels_shape={_lbl_shape} input_ids_shape={_ids_shape} "
+              f"valid_tokens={_valid_tokens} "
+              f"real_seqlens={real_seqlens} padded_seqlens={padded_seqlens} "
+              f"has_packed_seq_params={_has_psp} cu_seqlens={_cu} "
+              f"first20_labels={_nonpad_vals}")
         # === END DIAG ===
 
         return new_databatch
@@ -645,8 +645,21 @@ class Scheduler:
         else:
             group_list, data_list = self.compute_parallel_method(databatch)
 
+        # === DIAG: scheduling decision (all ranks) ===
+        print(f"[DIAG-SCHED] rank={self.rank} mode={self.schedule_mode} "
+              f"group_list={group_list} data_list={data_list} "
+              f"data_len={self.data_len.tolist()}")
+        # === END DIAG ===
+
         self.update_rank_dicts(group_list)
         self.update_group_data_id(data_list)
         self.update_parallel_group()
+
+        # === DIAG: per-rank group assignment (all ranks) ===
+        rank_dict_local = self.rank_dicts[self.rank % self.other_parallel_group_size]
+        print(f"[DIAG-SCHED] rank={self.rank} group_id={self.group_id} "
+              f"cp_group_ranks={rank_dict_local.get(str(self.group_id), 'N/A')} "
+              f"data_ids={self.data_dict.get(str(self.group_id), 'N/A')}")
+        # === END DIAG ===
 
         return self.get_data(databatch)

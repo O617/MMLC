@@ -269,13 +269,13 @@ def loss_func(output_tensor):
         _logging_loss = averaged_loss if averaged_loss.dim() == 0 else averaged_loss[0]
         loss_dir["loss"] = _logging_loss
 
-        # === DIAG: loss_func TND packed path (rank 0 only) ===
-        if torch.distributed.get_rank() == 0:
-            print(f"[DIAG-LOSSFUNC] rank=0 path=TND_packed "
-                  f"loss_for_backward={loss_for_backward.item():.6f} "
-                  f"local_num_tokens={local_num_tokens.item():.0f} "
-                  f"mean_per_sample={mean_per_sample.item():.6f} "
-                  f"logging_loss={_logging_loss.item():.6f}")
+        # === DIAG: loss_func TND packed path (all ranks) ===
+        _diag_rank = torch.distributed.get_rank()
+        print(f"[DIAG-LOSSFUNC] rank={_diag_rank} path=TND_packed "
+              f"loss_for_backward={loss_for_backward.item():.6f} "
+              f"local_num_tokens={local_num_tokens.item():.0f} "
+              f"mean_per_sample={mean_per_sample.item():.6f} "
+              f"logging_loss={_logging_loss.item():.6f}")
         # === END DIAG ===
 
         # 3-element return → schedules.py len==3 branch
@@ -292,14 +292,14 @@ def loss_func(output_tensor):
     loss_dir["loss"] = averaged_loss[0]
     loss = loss.unsqueeze(0).clone()
 
-    # === DIAG: loss_func BSND/default path (rank 0 only) ===
-    if torch.distributed.get_rank() == 0:
-        _token_info = f" token_nums={token_nums.item():.0f}" if token_nums is not None else ""
-        print(f"[DIAG-LOSSFUNC] rank=0 path=BSND_default "
-              f"raw_loss={loss_dict['loss'].item():.6f} "
-              f"logging_loss={averaged_loss[0].item():.6f} "
-              f"loss_for_backward={(loss / mpu.get_context_parallel_world_size()).squeeze().item():.6f}"
-              f"{_token_info}")
+    # === DIAG: loss_func BSND/default path (all ranks) ===
+    _diag_rank = torch.distributed.get_rank()
+    _token_info = f" token_nums={token_nums.item():.0f}" if token_nums is not None else ""
+    print(f"[DIAG-LOSSFUNC] rank={_diag_rank} path=BSND_default "
+          f"raw_loss={loss_dict['loss'].item():.6f} "
+          f"logging_loss={averaged_loss[0].item():.6f} "
+          f"loss_for_backward={(loss / mpu.get_context_parallel_world_size()).squeeze().item():.6f}"
+          f"{_token_info}")
     # === END DIAG ===
 
     return loss / mpu.get_context_parallel_world_size(), loss_dir
