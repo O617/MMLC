@@ -172,6 +172,23 @@ def get_batch(data_iterator, is_vit_last_stage=False):
             mpu.get_data_parallel_group())
     else:
         batch['tranfer'] = None
+
+    # === DIAG: dataloader raw output (all ranks, before Scheduler) ===
+    _rank = torch.distributed.get_rank()
+    _raw_labels = batch.get('labels', None)
+    if _raw_labels is not None:
+        _raw_shape = tuple(_raw_labels.shape)
+        _raw_valid = int((_raw_labels > -1).sum())
+        _flat = _raw_labels.flatten()
+        _nonpad = _flat[_flat > -1][:20].tolist()
+        _label_sum = int(_flat[_flat > -1].sum())
+    else:
+        _raw_shape, _raw_valid, _nonpad, _label_sum = None, 0, [], 0
+    print(f"[DIAG-RAW] rank={_rank} labels_shape={_raw_shape} "
+          f"valid_tokens={_raw_valid} label_sum={_label_sum} "
+          f"first20_labels={_nonpad}")
+    # === END DIAG ===
+
     if hybrid_parallel is not None and hybrid_parallel == "True":
         batch = data_scheduler.next_batch(batch)
     return batch
