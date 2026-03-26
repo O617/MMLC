@@ -51,7 +51,7 @@ def model_provider(pre_process=True, post_process=True, modules=None):
     _configure_modules(vlm_config, modules)
 
     model = VLMModel(vlm_config)
-    # profiler = MLLMProfiler(model_name="InternVL", model=model, args=args)
+    # MLLMProfiler("InternVL", model, get_args(),)
 
     if args.hetero_parallel:
         print_rank_0("apply hetero parallel ...")
@@ -61,7 +61,23 @@ def model_provider(pre_process=True, post_process=True, modules=None):
 
     global data_scheduler
     other_parallel_group_size = mpu.get_tensor_model_parallel_world_size() * mpu.get_pipeline_model_parallel_world_size()
-    data_scheduler = Scheduler(torch.distributed.get_world_size(), other_parallel_group_size, model.img_context_token_id, get_args().cp_window_size)
+    data_scheduler = Scheduler(
+        torch.distributed.get_world_size(),
+        other_parallel_group_size,
+        model.img_context_token_id,
+        get_args().context_parallel_size,
+        schedule_mode=os.environ.get("SCHEDULE_MODE", "dynamic"),
+    )
+
+    if hybrid_parallel is not None and hybrid_parallel == "True":
+        from megatron.core.num_microbatches_calculator import reconfigure_num_microbatches_calculator
+        reconfigure_num_microbatches_calculator(
+            rank=torch.distributed.get_rank(),
+            rampup_batch_size=None,
+            global_batch_size=args.global_batch_size,
+            micro_batch_size=args.micro_batch_size,
+            data_parallel_size=1,
+        )
 
     return model
 
@@ -157,6 +173,23 @@ def get_batch(data_iterator, is_vit_last_stage=False):
             mpu.get_data_parallel_group())
     else:
         batch['tranfer'] = None
+
+    # === DIAG: dataloader raw output (all ranks, before Scheduler) ===
+    _rank = torch.distributed.get_rank()
+    _raw_labels = batch.get('labels', None)
+    if _raw_labels is not None:
+        _raw_shape = tuple(_raw_labels.shape)
+        _raw_valid = int((_raw_labels > -1).sum())
+        _flat = _raw_labels.flatten()
+        _nonpad = _flat[_flat > -1][:20].tolist()
+        _label_sum = int(_flat[_flat > -1].sum())
+    else:
+        _raw_shape, _raw_valid, _nonpad, _label_sum = None, 0, [], 0
+    print(f"[DIAG-RAW] rank={_rank} labels_shape={_raw_shape} "
+          f"valid_tokens={_raw_valid} label_sum={_label_sum} "
+          f"first20_labels={_nonpad}")
+    # === END DIAG ===
+
     if hybrid_parallel is not None and hybrid_parallel == "True":
         batch = data_scheduler.next_batch(batch)
     return batch
@@ -170,6 +203,53 @@ def get_tps(output_tensor):
     tokens_per_sample = torch.tensor(S, device=output_tensor.device) / dp_size * cp_size
     torch.distributed.all_reduce(tokens_per_sample, group=mpu.get_data_parallel_group())
     return tokens_per_sample
+
+
+def average_losses_for_hybrid_parallel(losses, token_nums=None):
+    """Token-weighted average of losses across hybrid parallel groups.
+
+    Each CP group processes different data with potentially different token
+    counts.  A simple (unweighted) mean of group losses would be biased
+    towards groups with fewer tokens.  Instead, we compute the global
+    token-weighted mean:
+
+        avg_loss = Σ_groups (group_loss × group_tokens) / Σ_groups (group_tokens)
+
+    Because multiple ranks within one CP group hold the same (loss, token_nums)
+    pair, we divide each rank's contribution by its CP size before the
+    all-reduce so that each *group* is counted exactly once.
+
+    Args:
+        losses: list of loss tensors (one element).
+        token_nums: number of valid tokens in this group (scalar tensor).
+                    If None, falls back to unweighted mean (all groups equal weight).
+    """
+    cp_size = torch.distributed.get_world_size(group=mpu.get_context_parallel_group())
+    rank = torch.distributed.get_rank()
+
+    if token_nums is not None:
+        # --- Token-weighted average ---
+        # loss_x_tokens = group_loss * group_tokens (total un-normalized loss for this group)
+        # Divide by cp_size so that the cp_size ranks in one group contribute once total.
+        loss_val = losses[0].clone().detach()
+        tokens_val = token_nums.clone().detach().float()
+
+        loss_x_tokens = (loss_val * tokens_val / cp_size).view(1)
+        tokens_reduced = (tokens_val / cp_size).view(1)
+
+        torch.distributed.all_reduce(loss_x_tokens)
+        torch.distributed.all_reduce(tokens_reduced)
+
+        averaged_loss = loss_x_tokens / tokens_reduced
+    else:
+        # Fallback: unweighted mean (same as before but explicit)
+        num_groups = data_scheduler.get_num_groups()
+        averaged_losses = torch.cat(
+            [loss.clone().detach().view(1) / cp_size for loss in losses])
+        torch.distributed.all_reduce(averaged_losses)
+        averaged_loss = averaged_losses / num_groups
+
+    return averaged_loss
 
 
 def loss_func(output_tensor):
@@ -191,10 +271,55 @@ def loss_func(output_tensor):
             loss_dir
         )
 
+    # Per-sample loss for packed (TND) sequences with context parallelism
+    if args.calculate_per_sample_loss and 'mean_per_sample' in loss_dict:
+        loss_for_backward = loss_dict['loss']
+        local_num_tokens = loss_dict['local_num_tokens']
+        mean_per_sample = loss_dict['mean_per_sample']
+
+        # Logging loss: sample-count-weighted average across hybrid/DP groups
+        if hybrid_parallel is not None and hybrid_parallel == "True":
+            averaged_loss = average_losses_for_hybrid_parallel(
+                [mean_per_sample], token_nums=local_num_tokens)
+        else:
+            averaged_loss = average_losses_across_data_parallel_group([mean_per_sample])
+
+        _logging_loss = averaged_loss if averaged_loss.dim() == 0 else averaged_loss[0]
+        loss_dir["loss"] = _logging_loss
+
+        # === DIAG: loss_func TND packed path (all ranks) ===
+        _diag_rank = torch.distributed.get_rank()
+        print(f"[DIAG-LOSSFUNC] rank={_diag_rank} path=TND_packed "
+              f"loss_for_backward={loss_for_backward.item():.6f} "
+              f"local_num_tokens={local_num_tokens.item():.0f} "
+              f"mean_per_sample={mean_per_sample.item():.6f} "
+              f"logging_loss={_logging_loss.item():.6f}")
+        # === END DIAG ===
+
+        # 3-element return → schedules.py len==3 branch
+        return (loss_for_backward.unsqueeze(0).clone(), local_num_tokens, loss_dir)
+
     loss = loss_dict['loss']
-    averaged_loss = average_losses_across_data_parallel_group([loss])
+    token_nums = loss_dict.get('token_nums', None)
+
+    if hybrid_parallel is not None and hybrid_parallel == "True":
+        averaged_loss = average_losses_for_hybrid_parallel([loss], token_nums=token_nums)
+    else:
+        averaged_loss = average_losses_across_data_parallel_group([loss])
+
     loss_dir["loss"] = averaged_loss[0]
     loss = loss.unsqueeze(0).clone()
+
+    # === DIAG: loss_func BSND/default path (all ranks) ===
+    _diag_rank = torch.distributed.get_rank()
+    _token_info = f" token_nums={token_nums.item():.0f}" if token_nums is not None else ""
+    print(f"[DIAG-LOSSFUNC] rank={_diag_rank} path=BSND_default "
+          f"raw_loss={loss_dict['loss'].item():.6f} "
+          f"logging_loss={averaged_loss[0].item():.6f} "
+          f"loss_for_backward={(loss / mpu.get_context_parallel_world_size()).squeeze().item():.6f}"
+          f"{_token_info}")
+    # === END DIAG ===
+
     return loss / mpu.get_context_parallel_world_size(), loss_dir
 
 

@@ -555,6 +555,8 @@ def train(
             batch_size_all_rank = [torch.empty_like(batch_size_per_rank) for _ in range(num_replicas)]
             torch.distributed.all_gather(batch_size_all_rank, batch_size_per_rank, group=dp_process_group)
             batch_size = sum(batch_size_all_rank) - args.consumed_train_samples
+        elif os.environ.get("HYBRID_PARALLEL") == "True":
+            batch_size = args.micro_batch_size * get_num_microbatches()
         else:
             batch_size = (
                 mpu.get_data_parallel_world_size()
@@ -852,9 +854,12 @@ def train_step(
 
     # Update learning rate.
     if update_successful:
-        increment = (
-            get_num_microbatches() * args.micro_batch_size * args.data_parallel_size
-        )
+        if os.environ.get("HYBRID_PARALLEL") == "True":
+            increment = get_num_microbatches() * args.micro_batch_size
+        else:
+            increment = (
+                get_num_microbatches() * args.micro_batch_size * args.data_parallel_size
+            )
         if opt_param_scheduler is not None:
             opt_param_scheduler.step(increment=increment)
         skipped_iter = 0

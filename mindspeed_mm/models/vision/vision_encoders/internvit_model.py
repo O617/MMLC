@@ -425,6 +425,7 @@ class InternViT(MultiModalModule):
             attention_mask = attention_mask < 0.5
 
         encoder_outputs = self.encoder(hidden_states, attention_mask)
+        # torch.distributed.breakpoint()
         if get_args().context_parallel_size is not None and get_args().context_parallel_size > 1 and get_args().context_parallel_algo == "ulysses_cp_algo":
             split_gather_sizes = cal_split_sizes(self.seq_length - 1, get_args().context_parallel_size)
             encoder_outputs = gather_forward_split_backward(encoder_outputs, mpu.get_context_parallel_group(),

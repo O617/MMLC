@@ -1,0 +1,6 @@
+[submodule "Megatron-LM"]
+	path = Megatron-LM
+	url = https://github.com/O617/Megatron-LM
+[submodule "MindSpeed"]
+	path = MindSpeed
+	url = https://gitcode.com/Ascend/MindSpeed/
