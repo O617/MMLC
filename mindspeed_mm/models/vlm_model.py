@@ -22,7 +22,7 @@ from mindspeed.core.context_parallel.model_parallel_utils import (
     get_context_parallel_for_hybrid_ulysses_world_size
 )
 
-from mindspeed_mm.utils.utils import split_forward_gather_backward_with_megatron_cp
+from mindspeed_mm.utils.utils import split_forward_gather_backward_with_megatron_cp, split_packed_per_sample_megatron_cp
 from mindspeed_mm.models.common.module_spec.get_layer_spec import get_vit_layer_spec, get_llm_layer_spec, \
     get_projector_layer_spec, get_audio_layer_spec
 from mindspeed_mm.models.vision.vision_model import VisionModel
@@ -485,11 +485,11 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
             # Split sample_ids through the SAME CP pipeline as labels, so after gather
             # the position correspondence is preserved
             if args.context_parallel_algo == "megatron_cp_algo":
-                labels = split_forward_gather_backward_with_megatron_cp(
-                    shift_labels, mpu.get_context_parallel_group(), 1
+                labels = split_packed_per_sample_megatron_cp(
+                    shift_labels, cu_seqlens, mpu.get_context_parallel_group(), 1
                 )
-                sample_ids_local = split_forward_gather_backward_with_megatron_cp(
-                    sample_ids, mpu.get_context_parallel_group(), 1
+                sample_ids_local = split_packed_per_sample_megatron_cp(
+                    sample_ids, cu_seqlens, mpu.get_context_parallel_group(), 1
                 )
             elif args.context_parallel_algo == "hybrid_cp_algo":
                 split_gather_sizes = cal_split_sizes(
@@ -561,12 +561,10 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
                 if valid_tokens_per_sample[i] > 0:
                     per_sample_mean[i] = per_sample_loss_sum[i] / valid_tokens_per_sample[i].float()
 
-            # loss_for_backward: mean of per-sample means, divided by cp_size
-            # (schedules.py will multiply back by cp_size)
-            loss_for_backward = per_sample_mean.sum() / cp_size
-
-            # Detached per-sample mean for logging
-            mean_per_sample_detached = per_sample_mean.mean().detach()
+            # loss_for_backward: mean of per-sample means (same as BSND path)
+            # Uses 2-tuple return so schedules.py applies identical normalization
+            loss_for_backward = per_sample_mean.mean()
+            token_nums_mean = valid_tokens_per_sample.float().mean()
 
             # === DIAG: per-sample loss in TND packed path (all ranks) ===
             _diag_rank = torch.distributed.get_rank()
@@ -574,11 +572,10 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
                   f"num_subseq={num_subsequences} cp_size={cp_size} "
                   f"valid_per_sample={valid_tokens_per_sample.tolist()} "
                   f"per_sample_mean={per_sample_mean.tolist()} "
-                  f"mean_of_means={mean_per_sample_detached.item():.6f} "
-                  f"loss_for_backward={loss_for_backward.item():.6f}")
+                  f"mean_of_means={loss_for_backward.item():.6f}")
             # === END DIAG ===
 
-            return loss_for_backward, token_nums.sum(), mean_per_sample_detached
+            return loss_for_backward, token_nums_mean
 
         # ===== Original logic (non-packed or non-per-sample-loss) =====
         if args.context_parallel_algo == "megatron_cp_algo":
@@ -834,19 +831,26 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
                 output = output.contiguous().float()
                 loss_dict = {}
                 if labels is not None:
-                    if mpu.get_context_parallel_world_size() > 1:
+                    # Use per-sample CP loss path when:
+                    # 1. CP > 1 (standard ring attention), OR
+                    # 2. CP = 1 but data is packed (dynamic scheduler assigned
+                    #    multiple samples to a single-rank group in TND format).
+                    use_cp_loss_path = (
+                        mpu.get_context_parallel_world_size() > 1
+                        or (packed_seq_params is not None
+                            and packed_seq_params.cu_seqlens_q is not None)
+                    )
+                    if use_cp_loss_path:
                         result = self.compute_loss_with_context_parallel(
                             output, labels, packed_seq_params
                         )
-                        if get_args().calculate_per_sample_loss and packed_seq_params is not None and getattr(packed_seq_params, 'cu_seqlens_q', None) is not None:
-                            loss_for_backward, local_num_tokens, mean_per_sample = result
-                            loss_dict["loss"] = loss_for_backward
-                            loss_dict["local_num_tokens"] = local_num_tokens
-                            loss_dict["mean_per_sample"] = mean_per_sample
+                        loss, token_nums = result
+                        loss_dict["loss"] = loss
+                        loss_dict["token_nums"] = token_nums
+                        if packed_seq_params is not None and packed_seq_params.cu_seqlens_q is not None:
+                            loss_dict["num_samples"] = packed_seq_params.cu_seqlens_q.numel() - 1
                         else:
-                            loss, token_nums = result
-                            loss_dict["loss"] = loss
-                            loss_dict["token_nums"] = token_nums
+                            loss_dict["num_samples"] = output.shape[0]  # BSND batch dim
                         return {
                             "loss_dict": loss_dict,
                             "logits": output
@@ -864,6 +868,7 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
 
                         loss_dict["loss"] = loss
                         loss_dict["loss_mask"] = shift_labels > -1
+                        loss_dict["num_samples"] = output.shape[0]
 
                         return {
                             "loss_dict": loss_dict,

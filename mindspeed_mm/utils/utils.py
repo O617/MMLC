@@ -498,9 +498,73 @@ def _gather(
     return output
 
 
+class _SplitPackedPerSampleMegatronCP(torch.autograd.Function):
+    """Per-sample zigzag split for TND packed sequences.
+
+    Instead of applying one global zigzag to the whole packed tensor,
+    this splits each sub-sequence (defined by cu_seqlens) independently,
+    so that ``cu_seqlens // cp_size`` remains correct on every rank.
+    """
+
+    @staticmethod
+    def forward(ctx, val, cu_seqlens, cp_rank, cp_size, seq_dim, cp_group=None):
+        seqlens = (cu_seqlens[1:] - cu_seqlens[:-1]).tolist()
+        indices = []
+        offset = 0
+        for L in seqlens:
+            chunk = L // (2 * cp_size)
+            s1 = offset + cp_rank * chunk
+            s2 = offset + (2 * cp_size - cp_rank - 1) * chunk
+            indices.extend(range(s1, s1 + chunk))
+            indices.extend(range(s2, s2 + chunk))
+            offset += L
+
+        indices = torch.tensor(indices, device=val.device, dtype=torch.long)
+        result = val.index_select(seq_dim, indices)
+
+        ctx.save_for_backward(indices)
+        ctx.total_len = val.shape[seq_dim]
+        ctx.cp_group = cp_group
+        ctx.cp_size = cp_size
+        ctx.seq_dim = seq_dim
+        return result
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        indices, = ctx.saved_tensors
+        dim = ctx.seq_dim
+
+        # All-gather grads and indices from every CP rank
+        grad_gathered = _gather(grad_output, ctx.cp_group, dim=dim)
+        idx_list = [torch.zeros_like(indices) for _ in range(ctx.cp_size)]
+        torch.distributed.all_gather(idx_list, indices, group=ctx.cp_group)
+        all_indices = torch.cat(idx_list)              # length == total_len
+
+        # Inverse permutation: original_pos -> gathered_pos
+        inv_perm = torch.empty_like(all_indices)
+        inv_perm[all_indices] = torch.arange(len(all_indices), device=inv_perm.device)
+
+        grad_input = grad_gathered.index_select(dim, inv_perm) / ctx.cp_size
+        return grad_input, None, None, None, None, None
+
+
+def split_packed_per_sample_megatron_cp(
+        input_: torch.Tensor,
+        cu_seqlens: torch.Tensor,
+        process_group: torch.distributed.ProcessGroup,
+        dim: int = 0
+) -> torch.Tensor:
+    """Per-sample zigzag split for TND packed sequences with megatron CP."""
+    cp_size = torch.distributed.get_world_size(group=process_group)
+    cp_rank = torch.distributed.get_rank(group=process_group)
+    return _SplitPackedPerSampleMegatronCP.apply(
+        input_, cu_seqlens.long(), cp_rank, cp_size, dim, process_group
+    )
+
+
 class _SplitForwardGatherBackWardWithMegatronCP(torch.autograd.Function):
     '''
-    Split the input tensor in the forward pass and gather the gradients in the backward pass. 
+    Split the input tensor in the forward pass and gather the gradients in the backward pass.
     It will be implemented in Mindspeed in the future.
     '''
     @staticmethod

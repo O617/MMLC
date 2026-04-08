@@ -492,6 +492,33 @@ def train(
         else:
             curr_step_lr = param_group["lr"]
 
+    # --- torch.profiler setup (enabled by PROFILE=True env var) ---
+    _do_profile = os.environ.get("PROFILE", "").lower() == "true" and torch.distributed.get_rank() == 0
+    _profile_dir = os.environ.get("PROFILE_DIR", "./profile_traces")
+    if _do_profile:
+        os.makedirs(_profile_dir, exist_ok=True)
+        _prof_wait = int(os.environ.get("PROFILE_WAIT", "2"))
+        _prof_warmup = int(os.environ.get("PROFILE_WARMUP", "1"))
+        _prof_active = int(os.environ.get("PROFILE_ACTIVE", "3"))
+        _prof_activities = [torch.profiler.ProfilerActivity.CPU]
+        # Ascend NPU uses torch_npu profiling; check if NPU activity is available
+        if hasattr(torch.profiler.ProfilerActivity, 'NPU'):
+            _prof_activities.append(torch.profiler.ProfilerActivity.NPU)
+        _profiler = torch.profiler.profile(
+            activities=_prof_activities,
+            schedule=torch.profiler.schedule(
+                wait=_prof_wait, warmup=_prof_warmup,
+                active=_prof_active, repeat=1),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(_profile_dir),
+            record_shapes=True,
+            with_stack=True,
+        )
+        _profiler.start()
+        print(f"[PROFILER] rank=0 enabled: wait={_prof_wait} warmup={_prof_warmup} "
+              f"active={_prof_active} dir={_profile_dir}")
+    else:
+        _profiler = None
+
     while iteration < args.train_iters:
         memory_profiler.step()
 
@@ -547,6 +574,8 @@ def train(
             call_backs
         )
         iteration += 1
+        if _profiler is not None:
+            _profiler.step()
         if args.use_txt_dynamic_batching:
             dp_process_group = mpu.get_data_parallel_group()
             num_replicas = dp_process_group.size()
@@ -556,7 +585,11 @@ def train(
             torch.distributed.all_gather(batch_size_all_rank, batch_size_per_rank, group=dp_process_group)
             batch_size = sum(batch_size_all_rank) - args.consumed_train_samples
         elif os.environ.get("HYBRID_PARALLEL") == "True":
-            batch_size = args.micro_batch_size * get_num_microbatches()
+            batch_size = (
+                mpu.get_data_parallel_world_size()
+                * args.micro_batch_size
+                * get_num_microbatches()
+            )
         else:
             batch_size = (
                 mpu.get_data_parallel_world_size()
@@ -709,6 +742,10 @@ def train(
     if os.getenv('OOTB_OPTIMIZER_PROFILING', 'FALSE') != 'TRUE':
         prof.stop()
 
+    if _profiler is not None:
+        _profiler.stop()
+        print(f"[PROFILER] rank=0 trace saved to {_profile_dir}")
+
     track_e2e_metrics()
 
     # Flush TensorBoard and WandB writers.
@@ -855,7 +892,10 @@ def train_step(
     # Update learning rate.
     if update_successful:
         if os.environ.get("HYBRID_PARALLEL") == "True":
-            increment = get_num_microbatches() * args.micro_batch_size
+            increment = (
+                get_num_microbatches() * args.micro_batch_size
+                * mpu.get_data_parallel_world_size()
+            )
         else:
             increment = (
                 get_num_microbatches() * args.micro_batch_size * args.data_parallel_size

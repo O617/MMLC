@@ -26,11 +26,14 @@ from mindspeed_mm.utils.hetero_parallel import change_parallel_state, apply_hete
 from mindspeed_mm.utils.utils import EncoderBalanceComm
 from mindspeed_mm.utils.hetero_parallel import hetero_align_config
 from mindspeed_mm.utils.utils import compute_token_level_loss
-from scheduler import Scheduler
+from scheduler import Scheduler, DoubleBufferedScheduler
 from profiler import MLLMProfiler
 mindspeed_args = get_mindspeed_args()
 data_scheduler = None
 hybrid_parallel = os.environ.get("HYBRID_PARALLEL")
+# Double-buffered async prefetch state
+_prefetch_raw_batch = None  # raw batch pre-fetched for the next step
+_prefetch_started = False   # whether start_prefetch has been called
 if hasattr(mindspeed_args, "ai_framework") and mindspeed_args.ai_framework == "mindspore" and mindspeed_args.optimization_level >= 0:
     import mindspeed_mm.mindspore.mindspore_adaptor
 
@@ -61,22 +64,28 @@ def model_provider(pre_process=True, post_process=True, modules=None):
 
     global data_scheduler
     other_parallel_group_size = mpu.get_tensor_model_parallel_world_size() * mpu.get_pipeline_model_parallel_world_size()
-    data_scheduler = Scheduler(
-        torch.distributed.get_world_size(),
-        other_parallel_group_size,
-        model.img_context_token_id,
-        get_args().context_parallel_size,
+    use_async = os.environ.get("ASYNC_SCHEDULE", "False") == "True"
+    scheduler_cls = DoubleBufferedScheduler if use_async else Scheduler
+
+    scheduler_kwargs = dict(
+        cluster_size=torch.distributed.get_world_size(),
+        other_parallel_group_size=other_parallel_group_size,
+        img_context_token_id=model.img_context_token_id,
+        cp_window_size=get_args().context_parallel_size,
         schedule_mode=os.environ.get("SCHEDULE_MODE", "dynamic"),
     )
+    data_scheduler = scheduler_cls(**scheduler_kwargs)
 
     if hybrid_parallel is not None and hybrid_parallel == "True":
         from megatron.core.num_microbatches_calculator import reconfigure_num_microbatches_calculator
+        other_ps = mpu.get_tensor_model_parallel_world_size() * mpu.get_pipeline_model_parallel_world_size()
+        num_groups = torch.distributed.get_world_size() // other_ps // args.context_parallel_size
         reconfigure_num_microbatches_calculator(
             rank=torch.distributed.get_rank(),
             rampup_batch_size=None,
             global_batch_size=args.global_batch_size,
             micro_batch_size=args.micro_batch_size,
-            data_parallel_size=1,
+            data_parallel_size=num_groups,
         )
 
     return model
@@ -155,18 +164,22 @@ def move_to_device(batch: Dict[str, Any], float_dtype: str):
                         for t in v]
 
 
-def get_batch(data_iterator, is_vit_last_stage=False):
-    """Generate a batch."""
+def _load_raw_batch(data_iterator):
+    """Load a raw batch from the data iterator and move to device."""
     if data_iterator is not None:
         batch = next(data_iterator)
     else:
         raise ValueError("Data iterator is None. Unable to retrieve batch.")
-    # torch.distributed.breakpoint()
     move_to_device(batch, get_args().params_dtype)
     has_video = 'pixel_values_videos' in batch and 'video_grid_thw' in batch
     if has_video:
         batch['pixel_values'] = batch.pop('pixel_values_videos')
         batch['image_grid_thw'] = batch.pop('video_grid_thw')
+    return batch
+
+
+def _apply_encoder_balance(batch, is_vit_last_stage):
+    """Apply encoder DP balance communication if needed."""
     if (mpu.is_pipeline_first_stage() or is_vit_last_stage) and get_args().encoder_dp_balance:
         batch['pixel_values'], batch['tranfer'] = EncoderBalanceComm.apply(
             batch['pixel_values'],
@@ -174,7 +187,9 @@ def get_batch(data_iterator, is_vit_last_stage=False):
     else:
         batch['tranfer'] = None
 
-    # === DIAG: dataloader raw output (all ranks, before Scheduler) ===
+
+def _diag_raw_batch(batch):
+    """Print diagnostic info for raw batch (before Scheduler)."""
     _rank = torch.distributed.get_rank()
     _raw_labels = batch.get('labels', None)
     if _raw_labels is not None:
@@ -188,10 +203,66 @@ def get_batch(data_iterator, is_vit_last_stage=False):
     print(f"[DIAG-RAW] rank={_rank} labels_shape={_raw_shape} "
           f"valid_tokens={_raw_valid} label_sum={_label_sum} "
           f"first20_labels={_nonpad}")
-    # === END DIAG ===
 
-    if hybrid_parallel is not None and hybrid_parallel == "True":
+
+def get_batch(data_iterator, is_vit_last_stage=False):
+    """Generate a batch.
+
+    When ASYNC_SCHEDULE=True and using DoubleBufferedScheduler:
+      - During warmup: runs synchronously (populates group_pool cache).
+      - After warmup: consumes the prefetched result from the background
+        thread, then immediately kicks off prefetch for the *next* step.
+    """
+    global _prefetch_raw_batch, _prefetch_started
+
+    is_async = isinstance(data_scheduler, DoubleBufferedScheduler)
+    is_hybrid = hybrid_parallel is not None and hybrid_parallel == "True"
+
+    if is_async and is_hybrid and not data_scheduler.is_warmup() and _prefetch_started:
+        # ── Fast path: consume prefetched result ──
+        batch = data_scheduler.swap_and_get_data()
+        # EncoderBalanceComm was already applied to the raw batch before
+        # prefetch, and get_data filters pixel_values — so the balanced
+        # pixels are already in the result.  Just set tranfer from the
+        # prefetched raw batch.
+        batch['tranfer'] = _prefetch_raw_batch.get('tranfer', None) if _prefetch_raw_batch else None
+
+        # Kick off prefetch for the NEXT step
+        try:
+            next_raw = _load_raw_batch(data_iterator)
+            _diag_raw_batch(next_raw)
+            # Apply encoder balance to raw batch BEFORE scheduler sees it
+            _apply_encoder_balance(next_raw, is_vit_last_stage)
+            data_scheduler.start_prefetch(next_raw)
+            _prefetch_raw_batch = next_raw
+            _prefetch_started = True
+        except StopIteration:
+            # Epoch boundary — no more data to prefetch
+            _prefetch_started = False
+            _prefetch_raw_batch = None
+
+        return batch
+
+    # ── Slow path: synchronous (non-hybrid, warmup, or first call) ──
+    batch = _load_raw_batch(data_iterator)
+    _diag_raw_batch(batch)
+    _apply_encoder_balance(batch, is_vit_last_stage)
+
+    if is_hybrid:
         batch = data_scheduler.next_batch(batch)
+
+        # After warmup completes, kick off the first prefetch
+        if is_async and not data_scheduler.is_warmup() and not _prefetch_started:
+            try:
+                next_raw = _load_raw_batch(data_iterator)
+                _diag_raw_batch(next_raw)
+                _apply_encoder_balance(next_raw, is_vit_last_stage)
+                data_scheduler.start_prefetch(next_raw)
+                _prefetch_raw_batch = next_raw
+                _prefetch_started = True
+            except StopIteration:
+                _prefetch_started = False
+
     return batch
 
 
@@ -271,39 +342,26 @@ def loss_func(output_tensor):
             loss_dir
         )
 
-    # Per-sample loss for packed (TND) sequences with context parallelism
-    if args.calculate_per_sample_loss and 'mean_per_sample' in loss_dict:
-        loss_for_backward = loss_dict['loss']
-        local_num_tokens = loss_dict['local_num_tokens']
-        mean_per_sample = loss_dict['mean_per_sample']
-
-        # Logging loss: sample-count-weighted average across hybrid/DP groups
-        if hybrid_parallel is not None and hybrid_parallel == "True":
-            averaged_loss = average_losses_for_hybrid_parallel(
-                [mean_per_sample], token_nums=local_num_tokens)
-        else:
-            averaged_loss = average_losses_across_data_parallel_group([mean_per_sample])
-
-        _logging_loss = averaged_loss if averaged_loss.dim() == 0 else averaged_loss[0]
-        loss_dir["loss"] = _logging_loss
-
-        # === DIAG: loss_func TND packed path (all ranks) ===
-        _diag_rank = torch.distributed.get_rank()
-        print(f"[DIAG-LOSSFUNC] rank={_diag_rank} path=TND_packed "
-              f"loss_for_backward={loss_for_backward.item():.6f} "
-              f"local_num_tokens={local_num_tokens.item():.0f} "
-              f"mean_per_sample={mean_per_sample.item():.6f} "
-              f"logging_loss={_logging_loss.item():.6f}")
-        # === END DIAG ===
-
-        # 3-element return → schedules.py len==3 branch
-        return (loss_for_backward.unsqueeze(0).clone(), local_num_tokens, loss_dir)
-
     loss = loss_dict['loss']
     token_nums = loss_dict.get('token_nums', None)
+    num_samples = loss_dict.get('num_samples', 1)
 
-    if hybrid_parallel is not None and hybrid_parallel == "True":
-        averaged_loss = average_losses_for_hybrid_parallel([loss], token_nums=token_nums)
+    is_hybrid = os.environ.get("HYBRID_PARALLEL", None) == "True"
+    if is_hybrid:
+        # Hybrid Parallel: weight by num_samples so that each sample contributes
+        # equally to the gradient regardless of how many samples share a group.
+        # raw_loss is mean-of-per-sample-means; multiplying by num_samples
+        # recovers the sum, then /cp_size prevents double-counting within CP groups.
+        # After world all-reduce / world_size this gives Σ_all L_i / N.
+        cp_size = mpu.get_context_parallel_world_size()
+        dp_cp_group = mpu.get_data_parallel_group(with_context_parallel=True)
+        dp_cp_size = torch.distributed.get_world_size(group=dp_cp_group)
+
+        # logging_loss: all_reduce(raw_loss * num_samples / cp_size) / world_size
+        weighted_loss = loss.clone().detach() * num_samples / cp_size
+        averaged_loss = weighted_loss.view(1)
+        torch.distributed.all_reduce(averaged_loss, group=dp_cp_group)
+        averaged_loss = averaged_loss / dp_cp_size
     else:
         averaged_loss = average_losses_across_data_parallel_group([loss])
 
@@ -313,11 +371,12 @@ def loss_func(output_tensor):
     # === DIAG: loss_func BSND/default path (all ranks) ===
     _diag_rank = torch.distributed.get_rank()
     _token_info = f" token_nums={token_nums.item():.0f}" if token_nums is not None else ""
+    _ns_info = f" num_samples={num_samples}"
     print(f"[DIAG-LOSSFUNC] rank={_diag_rank} path=BSND_default "
           f"raw_loss={loss_dict['loss'].item():.6f} "
           f"logging_loss={averaged_loss[0].item():.6f} "
           f"loss_for_backward={(loss / mpu.get_context_parallel_world_size()).squeeze().item():.6f}"
-          f"{_token_info}")
+          f"{_token_info}{_ns_info}")
     # === END DIAG ===
 
     return loss / mpu.get_context_parallel_world_size(), loss_dir
@@ -345,15 +404,33 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
             args.micro_batch_size = pp_mbs * args.hetero_encoder_mbs_scale
 
     datasets = build_mm_dataset(data_config.dataset_param)
+
+    # Save original MBS before any temporary modificationsf
+    micro_batch_size = args.micro_batch_size
+
+    if hybrid_parallel is not None and hybrid_parallel == "True":
+        # Hybrid Parallel: every rank loads the same full batch, Scheduler distributes.
+        # Use a dummy process_group with size=1 so BaseRandomBatchSampler generates
+        # the same global permutation on all ranks (num_replicas=1, rank=0).
+        class _SingleRankGroup:
+            def size(self): return 1
+            def rank(self): return 0
+
+        other_ps = mpu.get_tensor_model_parallel_world_size() * mpu.get_pipeline_model_parallel_world_size()
+        num_groups = torch.distributed.get_world_size() // other_ps // args.context_parallel_size
+        # Temporarily enlarge MBS so DataLoader yields enough samples for all CP groups
+        args.micro_batch_size = micro_batch_size * num_groups
+        process_group = _SingleRankGroup()
+    else:
+        process_group = mpu.get_data_parallel_group()
+
     build_dataloader = partial(
         build_mm_dataloader,
         dataloader_param=data_config.dataloader_param,
-        process_group=mpu.get_data_parallel_group(),
+        process_group=process_group,
         dataset_param=data_config.dataset_param,
         consumed_samples=args.consumed_train_samples
     )
-
-    micro_batch_size = args.micro_batch_size
     if args.use_data_balance:
         global_batch_size = args.micro_batch_size * get_num_microbatches()
         if args.hetero_encoder_mbs_scale > 1:

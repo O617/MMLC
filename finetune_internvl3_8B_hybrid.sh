@@ -13,10 +13,11 @@ export ACLNN_CACHE_LIMIT=100000
 export ASCEND_LAUNCH_BLOCKING=1
 export HCCL_IF_BASE_PORT=50000
 export HYBRID_PARALLEL=True
+export LD_LIBRARY_PATH=/opt/conda/private/envs/MindSpeed-MM/lib:$LD_LIBRARY_PATH
 
 
 # 根据机器实际情况填写
-NPUS_PER_NODE=8
+NPUS_PER_NODE=4
 # 注意，当前为多机运行，需要根据实际的机器ip创建examples/internvl3/hostfile.txt文件，其中每行为一台机器的ip地址
 HOSTFILE="examples/internvl3/hostfile.txt"
 MASTER_ADDR=$(head -n1 $HOSTFILE | awk '{print $1;}')  # 获取hostfile第一行为masteraddr
@@ -31,13 +32,13 @@ echo $NODE_ADDR
 echo $NODE_RANK
 echo $NNODES
 
-MBS=8
+MBS=2
 GRAD_ACC_STEP=8
 TP=1
 PP=1
 CP=2
 DP=$(($WORLD_SIZE/$TP/$PP/$CP))
-GBS=$(($MBS*$GRAD_ACC_STEP))
+GBS=$(($MBS*$GRAD_ACC_STEP*$DP))
 
 MM_DATA="./examples/internvl3/data_8B_hybrid.json"
 MM_MODEL="./examples/internvl3/model_8B.json"
@@ -54,6 +55,7 @@ MM_ARGS="
 DISTRIBUTED_ARGS="
     --nproc_per_node $NPUS_PER_NODE \
     --nnodes $NNODES \
+    --master_port 30000 
 "
     # --node_rank $NODE_RANK \
     # --master_addr $MASTER_ADDR \
@@ -92,7 +94,7 @@ GPT_ARGS="
     --load $LOAD_PATH \
     --variable-seq-lengths \
     --normalization RMSNorm \
-    --num-workers 8 \
+    --num-workers 2 \
     --calculate-per-sample-loss \
 "
 # To ensure code security, configure trust_remote_code to default to False.

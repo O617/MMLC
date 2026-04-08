@@ -459,8 +459,8 @@ class BaseRandomBatchSampler(DistributedSampler):
                 idx_range_bucket = list(range(bucket_size))
             idx_range = [start_idx + x for x in idx_range_bucket[bucket_offset:]]
         else:
-            full_bucket_size = (self.total_samples // self.micro_batch_size) \
-                                * self.micro_batch_size
+            full_bucket_size = (self.total_samples // self.micro_batch_times_data_parallel_size) \
+                                * self.micro_batch_times_data_parallel_size
             full_bucket_offset = current_epoch_samples
             if self.shuffle:
                 g = torch.Generator()

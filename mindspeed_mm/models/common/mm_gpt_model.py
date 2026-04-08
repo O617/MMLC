@@ -29,7 +29,7 @@ from mindspeed_mm.models.common.embeddings.rope import DynamicRotaryEmbedding
 from mindspeed_mm.models.vision.vision_encoders.qwen2vl_vit_model import Qwen2VLRotaryEmbedding_llm
 from mindspeed_mm.models.vision.vision_encoders.qwen3vl_vit_model import Qwen3VLTextRotaryEmbedding_llm
 from mindspeed_mm.models.text_decoder.qwen3vl_transformer_block import Qwen3vlTransformerBlock
-from mindspeed_mm.utils.utils import ensure_valid, split_forward_gather_backward_with_megatron_cp
+from mindspeed_mm.utils.utils import ensure_valid, split_forward_gather_backward_with_megatron_cp, split_packed_per_sample_megatron_cp
 from mindspeed_mm.models.vision.vision_encoders.glm4v_vl_vit_model import GlmTransformerBlock, Glm4vRotaryEmbedding_llm
 
 
@@ -257,11 +257,22 @@ class MMGPTModel(LanguageModule):
                                                                 split_gather_sizes, "down")
                     
             elif get_args().context_parallel_algo == "megatron_cp_algo":
-                input_ids = split_forward_gather_backward_with_megatron_cp(input_ids, mpu.get_context_parallel_group(), dim=1)
-                if position_ids is not None:
-                    position_ids = split_forward_gather_backward_with_megatron_cp(position_ids, mpu.get_context_parallel_group(), dim=2)
-                if self.pre_process:
-                    decoder_input = split_forward_gather_backward_with_megatron_cp(decoder_input, mpu.get_context_parallel_group(), dim=0)
+                _is_packed = (packed_seq_params is not None
+                              and getattr(packed_seq_params, 'cu_seqlens_q', None) is not None)
+                if _is_packed:
+                    _cu = packed_seq_params.cu_seqlens_q
+                    _cp_grp = mpu.get_context_parallel_group()
+                    input_ids = split_packed_per_sample_megatron_cp(input_ids, _cu, _cp_grp, dim=1)
+                    if position_ids is not None:
+                        position_ids = split_packed_per_sample_megatron_cp(position_ids, _cu, _cp_grp, dim=2)
+                    if self.pre_process:
+                        decoder_input = split_packed_per_sample_megatron_cp(decoder_input, _cu, _cp_grp, dim=0)
+                else:
+                    input_ids = split_forward_gather_backward_with_megatron_cp(input_ids, mpu.get_context_parallel_group(), dim=1)
+                    if position_ids is not None:
+                        position_ids = split_forward_gather_backward_with_megatron_cp(position_ids, mpu.get_context_parallel_group(), dim=2)
+                    if self.pre_process:
+                        decoder_input = split_forward_gather_backward_with_megatron_cp(decoder_input, mpu.get_context_parallel_group(), dim=0)
 
             elif get_args().context_parallel_algo == "hybrid_cp_algo":
                 seq_len = input_ids.shape[-1]

@@ -3,12 +3,15 @@ import psutil
 import os
 import gc
 import time
+import threading
 import numpy as np
 
+from dataclasses import dataclass, field
+from typing import Optional, Dict, List, Any
 from functools import wraps
 from megatron.core import mpu
 from mindspeed.core.context_parallel import model_parallel_utils as ms_mpu
-from megatron.core.packed_seq_params import PackedSeqParams 
+from megatron.core.packed_seq_params import PackedSeqParams
 from scipy.optimize import linear_sum_assignment
 
 def monitor_memory(func):
@@ -358,20 +361,6 @@ class Scheduler:
         assignments.reverse()  # Restore original group order
         return assignments
 
-    # def compute_parallel_method(self, databatch):
-    #     # Toy scheduler for simple test
-    #     input_ids = databatch['input_ids']
-    #     attention_mask = databatch['attention_mask']
-    #     self.data_len = torch.sum(attention_mask, dim=1) + 1
-    #     sorted_data_id = torch.argsort(self.data_len)
-    #     # group_list = [1, 1, 1, 1, 2, 2]
-    #     # data_list = [[sorted_data_id[0].tolist()], [sorted_data_id[1].tolist()], [sorted_data_id[2].tolist()], [sorted_data_id[3].tolist()], sorted_data_id[4:6].tolist(), sorted_data_id[6:8].tolist()]
-    #     group_list = [1, 1, 1, 2, 3]
-    #     data_list = [[sorted_data_id[0].tolist()], [sorted_data_id[1].tolist()], [sorted_data_id[2].tolist()], sorted_data_id[3:5].tolist(), sorted_data_id[5:8].tolist()]
-    #     # group_list = [1, 1, 1, 1, 4]
-    #     # data_list = [[sorted_data_id[0].tolist()], [sorted_data_id[1].tolist()], [sorted_data_id[2].tolist()], [sorted_data_id[3].tolist()], sorted_data_id[4:8].tolist()]
-    #     return group_list, data_list
-
     def compute_parallel_method(self, databatch):
         """
         Dynamic Hybrid Parallelism scheduler following DHP paper methodology.
@@ -390,18 +379,18 @@ class Scheduler:
         input_ids = databatch['input_ids']
         attention_mask = databatch['attention_mask']
         self.data_len = torch.sum(attention_mask, dim=1) + 1
-        seq_len_chunk = 4096
-        
+        seq_len_chunk = 8192
+
         # Compute sequence lengths [batch_size]
         data_len = torch.sum(attention_mask, dim=1) + 1
         batch_size = data_len.shape[0]
-        
+
         if batch_size == 0:
             return [], []
-        
+
         seq_ids = list(range(batch_size))
         seq_lens = data_len.tolist()
-        
+
         # Calculate minimum CP degree for each sequence
         # Heuristic: longer sequences benefit more from parallelism
         max_available_cp = self.cluster_size // self.other_parallel_group_size
@@ -412,17 +401,17 @@ class Scheduler:
         # Stage 1: Sequence Packing via Best-Fit Decreasing
         sequences = list(zip(seq_ids, seq_lens))
         groups = self.sequence_packing_bfd(
-            sequences, 
+            sequences,
             min_cp_degrees,
             capacity_factor=seq_len_chunk  # Tunable parameter
         )
-        
+
         # Fallback if packing fails
         if not groups:
             group_list = [1] * batch_size
             data_list = [[i] for i in range(batch_size)]
             return group_list, data_list
-        
+
         # Stage 2: Resource Allocation via 2D Dynamic Programming
         total_available_ranks = max_available_cp
         assignments = self.dp_resource_allocation(
@@ -431,16 +420,16 @@ class Scheduler:
             self.mock_time_estimator,
             max_cp_degree=min(8, total_available_ranks)
         )
-        
+
         # Convert to output format
         group_list = [assign['cp_degree'] for assign in assignments]
         data_list = [assign['seq_ids'] for assign in assignments]
-        
+
         # Safety check: ensure all sequences are assigned
         assigned_set = set()
         for dl in data_list:
             assigned_set.update(dl)
-        
+
         unassigned = [i for i in range(batch_size) if i not in assigned_set]
         if unassigned:
             if data_list:
@@ -450,7 +439,9 @@ class Scheduler:
             else:
                 data_list.append(unassigned)
                 group_list.append(1)
-        
+
+        torch.distributed.breakpoint()
+
         return group_list, data_list
 
     def compute_parallel_method_naive(self, databatch):
@@ -663,3 +654,317 @@ class Scheduler:
         # === END DIAG ===
 
         return self.get_data(databatch)
+
+
+# ---------------------------------------------------------------------------
+#  Double-Buffered Async Scheduler
+# ---------------------------------------------------------------------------
+
+@dataclass
+class _ScheduleBuffer:
+    """Container for pre-computed scheduling results."""
+    group_list: List[int] = field(default_factory=list)
+    data_list: List[List[int]] = field(default_factory=list)
+    rank_dicts: List[Dict] = field(default_factory=list)
+    data_dict: Dict[str, Any] = field(default_factory=dict)
+    data_len: Optional[torch.Tensor] = None
+    group_id: Optional[str] = None
+    cp_group: Optional[Any] = None
+    local_group_ranks: Optional[List[int]] = None
+    prepared_data: Optional[Dict] = None
+    ready: bool = False
+
+    def reset(self):
+        self.group_list = []
+        self.data_list = []
+        self.rank_dicts = []
+        self.data_dict = {}
+        self.data_len = None
+        self.group_id = None
+        self.cp_group = None
+        self.local_group_ranks = None
+        self.prepared_data = None
+        self.ready = False
+
+
+class DoubleBufferedScheduler(Scheduler):
+    """Scheduler with double-buffered async prefetch.
+
+    While the current step runs forward/backward on the GPU, a background
+    thread pre-computes the scheduling decision, builds rank dicts, resolves
+    the process group, and prepares data tensors for the *next* step on a
+    separate CUDA stream.  At the sync point the main thread only needs to
+    do O(1) pointer assignments.
+
+    Usage in the training loop::
+
+        # First step — synchronous cold start
+        batch_0 = scheduler.next_batch(raw_batch_0)
+
+        # Kick off prefetch for step 1
+        scheduler.start_prefetch(raw_batch_1)
+
+        forward_backward(batch_0)
+
+        # Consume prefetch result (near-instant) and kick off step 2
+        batch_1 = scheduler.swap_and_get_data()
+        scheduler.start_prefetch(raw_batch_2)
+
+        forward_backward(batch_1)
+        ...
+    """
+
+    def __init__(self, *args, warmup_steps: int = 3, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._buffers = [_ScheduleBuffer(), _ScheduleBuffer()]
+        self._active = 0  # index of the buffer currently used by forward
+        self._prefetch_thread: Optional[threading.Thread] = None
+        self._prefetch_stream: Optional[torch.cuda.Stream] = None
+        self._warmup_steps = warmup_steps
+        self._step_count = 0
+        self._prefetch_error: Optional[Exception] = None
+
+    @property
+    def _next_buf(self) -> _ScheduleBuffer:
+        return self._buffers[1 - self._active]
+
+    def _ensure_stream(self):
+        if self._prefetch_stream is None:
+            self._prefetch_stream = torch.cuda.Stream()
+
+    # ── Pure-function helpers (no self mutation) ──
+
+    @staticmethod
+    def _build_rank_dicts_pure(group_list, other_parallel_group_size, rank):
+        """Build rank_dicts without barrier or self mutation."""
+        rank_dicts = [{} for _ in range(other_parallel_group_size)]
+        cumsum = 0
+        for group_id, group_size in enumerate(group_list):
+            group_ranks = [(i + cumsum) * other_parallel_group_size
+                           for i in range(group_size)]
+            for op_id in range(other_parallel_group_size):
+                rank_dicts[op_id][str(group_id)] = [
+                    gr + op_id for gr in group_ranks
+                ]
+            cumsum += group_size
+        return rank_dicts
+
+    def _resolve_group_id_pure(self, rank_dicts):
+        """Find this rank's group_id from rank_dicts."""
+        rank_dict_local = rank_dicts[self.rank % self.other_parallel_group_size]
+        for gid in rank_dict_local:
+            if self.rank in rank_dict_local[gid]:
+                return gid
+        raise ValueError(f"Rank {self.rank} not in any group")
+
+    def _prepare_data_pure(self, databatch, data_dict, data_len, group_id,
+                           local_group_ranks, rank_dicts):
+        """Pure-function version of get_data(): no self reads except immutable config."""
+        data_layout = os.environ.get("DATA_LAYOUT", "TND").upper()
+        new_databatch = {}
+        local_data_id = data_dict[str(group_id)]
+        local_data_len = data_len[local_data_id]
+        cp_size = len(local_group_ranks)
+
+        # --- Compute real and padded sequence lengths ---
+        real_seqlens = local_data_len.tolist()
+        padded_seqlens = [pad_len_to(s, cp_size * 2) for s in real_seqlens]
+
+        padded_cumsum = [0]
+        for p in padded_seqlens:
+            padded_cumsum.append(padded_cumsum[-1] + p)
+
+        total_padded_len = padded_cumsum[-1]
+        max_padded_seqlen = max(padded_seqlens)
+
+        cu_seqlens_q = torch.tensor(padded_cumsum, dtype=torch.int32,
+                                    device=databatch['input_ids'].device)
+        cu_seqlens_q_padded = torch.tensor(padded_cumsum, dtype=torch.int32,
+                                           device=databatch['input_ids'].device)
+
+        # --- Image patch mask ---
+        img_token_mask = torch.eq(databatch['input_ids'], self.img_context_token_id)
+        img_token_per_seq = torch.sum(img_token_mask, dim=-1)
+        img_token_sum = torch.sum(img_token_per_seq)
+        img_token_per_patch = img_token_sum // torch.sum(databatch['image_flags'])
+        img_patch_cumsum = (img_token_per_seq // img_token_per_patch).cumsum(0)
+        img_patch_cumsum_ = torch.zeros_like(img_patch_cumsum)
+        img_patch_cumsum_[1:] = img_patch_cumsum[:-1]
+        img_patch_mask = torch.zeros_like(databatch['image_flags'], dtype=torch.bool)
+        for data_id in local_data_id:
+            img_patch_mask[img_patch_cumsum_[data_id]:img_patch_cumsum[data_id]] = True
+
+        if data_layout == "TND":
+            for key in databatch.keys():
+                if databatch[key] is None:
+                    new_databatch[key] = databatch[key]
+                    continue
+                if key in ['attention_mask', 'labels', 'input_ids']:
+                    value_tensor = databatch[key][local_data_id]
+                    fill_value = -100 if key == 'labels' else 0
+                    new_value_tensor = torch.full(
+                        (total_padded_len,), fill_value,
+                        dtype=value_tensor.dtype, device=value_tensor.device)
+                    seq_dim = value_tensor.shape[1] if value_tensor.dim() == 2 else value_tensor.shape[0]
+                    for data_idx in range(value_tensor.shape[0]):
+                        start = padded_cumsum[data_idx]
+                        real_len = min(real_seqlens[data_idx], seq_dim)
+                        new_value_tensor[start:start + real_len] = (
+                            value_tensor[data_idx, :real_len]
+                        )
+                    new_databatch[key] = new_value_tensor.unsqueeze(0)
+                elif key in ['pixel_values', 'image_flags']:
+                    new_databatch[key] = databatch[key][img_patch_mask]
+                else:
+                    new_databatch[key] = databatch[key][local_data_id].contiguous()
+            new_databatch["packed_seq_params"] = PackedSeqParams(
+                qkv_format="thd",
+                cu_seqlens_q=cu_seqlens_q,
+                cu_seqlens_kv=cu_seqlens_q,
+                cu_seqlens_q_padded=cu_seqlens_q_padded,
+                cu_seqlens_kv_padded=cu_seqlens_q_padded,
+                max_seqlen_q=max_padded_seqlen,
+                max_seqlen_kv=max_padded_seqlen,
+            )
+        else:
+            max_local_len = max_padded_seqlen
+            for key in databatch.keys():
+                if databatch[key] is None:
+                    new_databatch[key] = databatch[key]
+                    continue
+                if key in ['attention_mask', 'labels', 'input_ids']:
+                    value_tensor = databatch[key][local_data_id]
+                    bsz, pad_seq_len = (value_tensor.shape if value_tensor.dim() == 2
+                                        else (1, value_tensor.shape[0]))
+                    if pad_seq_len < max_local_len:
+                        fill_value = -100 if key == 'labels' else 0
+                        new_value_tensor = torch.full(
+                            [bsz, max_local_len], fill_value,
+                            dtype=value_tensor.dtype, device=value_tensor.device)
+                        new_value_tensor[:, :pad_seq_len] = value_tensor
+                        value_tensor = new_value_tensor
+                    else:
+                        value_tensor = value_tensor[:, :max_local_len]
+                    new_databatch[key] = value_tensor
+                elif key in ['pixel_values', 'image_flags']:
+                    new_databatch[key] = databatch[key][img_patch_mask]
+                else:
+                    new_databatch[key] = databatch[key][local_data_id].contiguous()
+
+        return new_databatch
+
+    # ── Background worker ──
+
+    def _prefetch_worker(self, databatch):
+        """Background thread: schedule + build groups + prepare data."""
+        buf = self._next_buf
+        buf.reset()
+        try:
+            # Stage 1: Scheduling algorithm (pure CPU)
+            if self.schedule_mode == "naive":
+                buf.group_list, buf.data_list = self.compute_parallel_method_naive(databatch)
+            else:
+                buf.group_list, buf.data_list = self.compute_parallel_method(databatch)
+            # data_len was set as side effect; capture it into buffer
+            buf.data_len = self.data_len.clone()
+
+            # Stage 2: Build rank_dicts (pure CPU, no barrier)
+            buf.rank_dicts = self._build_rank_dicts_pure(
+                buf.group_list, self.other_parallel_group_size, self.rank)
+            buf.data_dict = {str(i): d for i, d in enumerate(buf.data_list)}
+
+            # Stage 3: Resolve group assignment (pure CPU)
+            buf.group_id = self._resolve_group_id_pure(buf.rank_dicts)
+            rank_dict_local = buf.rank_dicts[self.rank % self.other_parallel_group_size]
+            buf.local_group_ranks = rank_dict_local[str(buf.group_id)]
+
+            # Stage 4: Lookup process group from cache
+            # NOTE: get_from_group_pool may call mpu.create_group() on cache miss.
+            # During warmup, next_batch() runs synchronously so the pool gets
+            # populated.  After warmup, all groups should be cached already.
+            buf.cp_group = self.get_from_group_pool(buf.local_group_ranks)
+
+            # Stage 5: Prepare data tensors (on separate CUDA stream)
+            self._ensure_stream()
+            with torch.cuda.stream(self._prefetch_stream):
+                buf.prepared_data = self._prepare_data_pure(
+                    databatch, buf.data_dict, buf.data_len, buf.group_id,
+                    buf.local_group_ranks, buf.rank_dicts)
+
+            buf.ready = True
+
+        except Exception as e:
+            self._prefetch_error = e
+
+    # ── Public API ──
+
+    def start_prefetch(self, databatch):
+        """Launch background prefetch for the next step.
+
+        Call this right after obtaining the raw batch from the dataloader
+        and moving it to device.  The prefetch runs concurrently with the
+        current step's forward/backward.
+        """
+        # Wait for any previous prefetch to finish (shouldn't normally happen)
+        if self._prefetch_thread is not None:
+            self._prefetch_thread.join()
+            self._prefetch_thread = None
+
+        self._prefetch_error = None
+        self._prefetch_thread = threading.Thread(
+            target=self._prefetch_worker, args=(databatch,),
+            daemon=True)
+        self._prefetch_thread.start()
+
+    def swap_and_get_data(self):
+        """Consume the prefetched result: sync stream, swap mpu globals, return data.
+
+        This is the only sync point on the critical path.  Cost ≈
+        stream.synchronize() + a handful of pointer assignments.
+        """
+        # Wait for background thread
+        if self._prefetch_thread is not None:
+            self._prefetch_thread.join()
+            self._prefetch_thread = None
+
+        # Check for errors in the worker
+        if self._prefetch_error is not None:
+            raise RuntimeError(
+                f"Prefetch worker failed: {self._prefetch_error}"
+            ) from self._prefetch_error
+
+        buf = self._next_buf
+        assert buf.ready, "Prefetch buffer not ready"
+
+        # Synchronize the CUDA stream used by _prepare_data_pure
+        if self._prefetch_stream is not None:
+            self._prefetch_stream.synchronize()
+
+        # ═══ O(1) pointer assignments — the only blocking work ═══
+        mpu._CONTEXT_PARALLEL_GROUP = buf.cp_group
+        mpu._CONTEXT_PARALLEL_GLOBAL_RANKS = list(buf.local_group_ranks)
+        ms_mpu._CONTEXT_PARALLEL_RANKS_FOR_RING_INTER_WINDOW_KV = list(buf.local_group_ranks)
+        ms_mpu._CONTEXT_PARALLEL_RANKS_FOR_RING_INTER_WINDOW_DKV = list(buf.local_group_ranks)
+
+        # Sync Scheduler's own state (so get_num_groups() etc. still work)
+        self.rank_dicts = buf.rank_dicts
+        self.data_dict = buf.data_dict
+        self.data_len = buf.data_len
+        self.group_id = buf.group_id
+        self.hybrid_group = buf.cp_group
+
+        # Flip active buffer
+        self._active = 1 - self._active
+        self._step_count += 1
+
+        return buf.prepared_data
+
+    def is_warmup(self):
+        """True during the first few steps when we run synchronously."""
+        return self._step_count < self._warmup_steps
+
+    def next_batch(self, databatch):
+        """Synchronous fallback — used during warmup and as the original API."""
+        result = super().next_batch(databatch)
+        self._step_count += 1
+        return result

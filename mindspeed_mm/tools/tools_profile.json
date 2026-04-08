@@ -1,0 +1,36 @@
+{
+    "profile": {
+        "enable": true,
+        "profile_type": "static",
+        "ranks": [0],
+        "static_param": {
+            "level": "level1",
+            "with_stack": false,
+            "with_memory": false,
+            "record_shapes": false,
+            "with_cpu": true,
+            "save_path": "./PROFILE_SAVE_PATH",
+            "start_step": 5,
+            "end_step": 8,
+            "data_simplification": false,
+            "aic_metrics_type": "PipeUtilization",
+            "analyse_flag": true
+        },
+        "dynamic_param": {
+            "config_path": "path to dynamic config folder"
+        }
+    },
+    "memory_profile": {
+        "enable": false,
+        "start_step": 0,
+        "end_step": 2,
+        "save_path": "./memory_snapshot",
+        "dump_ranks": [0],
+        "stacks": "all",
+        "max_entries": null,
+        "mem_info":  false
+    },
+    "sorafeature":{
+        "save_path": "./sora_features"
+    }
+}
