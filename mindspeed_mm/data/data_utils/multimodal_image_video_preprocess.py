@@ -77,6 +77,25 @@ class InternvlImageVideoPreprocess(MultiModalImageVideoPreprocessBase):
             raise ValueError("Either image_path or video_path must be provided")
 
     
+    def get_num_patches_from_path(self, image_path, mode="", num_image=1):
+        """Return patch count for an image without decoding pixel data.
+
+        Uses PIL's lazy open (reads only the file header) to get (width, height),
+        then applies the same dynamic-patching formula as image_to_pixel_values.
+        """
+        if not self.dynamic_image_size:
+            return 1
+        with Image.open(image_path) as img:
+            width, height = img.size
+        max_num = self.max_dynamic_patch // num_image if mode == "multi_image" else self.max_dynamic_patch
+        return count_patches_from_dims(
+            width, height,
+            min_num=self.min_dynamic_patch,
+            max_num=max_num,
+            image_size=self.image_size,
+            use_thumbnail=self.use_thumbnail,
+        )
+
     def image_to_pixel_values(self, image_path, mode="", num_image=1):
         image = self.image_reader(image_path)
         max_num = self.max_dynamic_patch // num_image if mode == "multi_image" else self.max_dynamic_patch
@@ -132,6 +151,28 @@ def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_
             if area > 0.5 * image_size * image_size * ratio[0] * ratio[1]:
                 best_ratio = ratio
     return best_ratio
+
+
+def count_patches_from_dims(width, height, min_num=1, max_num=6, image_size=448, use_thumbnail=False):
+    """Compute the number of image patches from (width, height) without loading pixel data.
+
+    Replicates the block-counting logic of dynamic_preprocess so callers can
+    determine num_patches by reading only the image header (PIL lazy open).
+    """
+    aspect_ratio = width / height
+    target_ratios = set()
+    for n in range(min_num, max_num + 1):
+        for i in range(1, n + 1):
+            for j in range(1, n + 1):
+                if min_num <= i * j <= max_num:
+                    target_ratios.add((i, j))
+    target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
+    target_aspect_ratio = find_closest_aspect_ratio(
+        aspect_ratio, target_ratios, width, height, image_size)
+    blocks = target_aspect_ratio[0] * target_aspect_ratio[1]
+    if use_thumbnail and blocks != 1:
+        blocks += 1
+    return blocks
 
 
 def dynamic_preprocess(image, min_num=1, max_num=6, image_size=448, use_thumbnail=False):

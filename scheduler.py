@@ -72,6 +72,18 @@ class Scheduler:
         self.dp_group = None
         self.dp_group_ranks = None
         self.schedule_mode = schedule_mode
+        self.pixel_loader = None  # Optional callback for two-phase image loading
+
+    def set_pixel_loader(self, pixel_loader):
+        """Set a callback for loading pixel_values after scheduling (two-phase mode).
+
+        The callback signature is:
+            pixel_loader(databatch, local_data_ids) -> (pixel_values_tensor, image_flags_tensor)
+
+        where databatch is the raw full batch and local_data_ids is a list of
+        sample indices assigned to this rank's CP group.
+        """
+        self.pixel_loader = pixel_loader
 
     def get_group_data(self, group_id):
         assert self.rank_dicts is not None, "Rank dict is not initialized" 
@@ -440,8 +452,6 @@ class Scheduler:
                 data_list.append(unassigned)
                 group_list.append(1)
 
-        torch.distributed.breakpoint()
-
         return group_list, data_list
 
     def compute_parallel_method_naive(self, databatch):
@@ -537,8 +547,15 @@ class Scheduler:
         for data_id in local_data_id:
             img_patch_mask[img_patch_cumsum_[data_id]:img_patch_cumsum[data_id]] = True
 
+        # In two-phase (lightweight) mode pixel_values is None in the raw batch.
+        # The pixel_loader callback will fill it after scheduling.
+        _lightweight_mode = databatch.get('pixel_values') is None and self.pixel_loader is not None
+
         if data_layout == "TND":
             for key in databatch.keys():
+                if key.startswith('_'):
+                    # Private metadata keys (e.g. _image_path): skip, not tensors
+                    continue
                 if databatch[key] is None:
                     new_databatch[key] = databatch[key]
                     continue
@@ -560,8 +577,11 @@ class Scheduler:
                         )
                     new_databatch[key] = new_value_tensor.unsqueeze(0)
                 elif key in ['pixel_values', 'image_flags']:
-                    value_tensor = databatch[key][img_patch_mask]
-                    new_databatch[key] = value_tensor
+                    if _lightweight_mode:
+                        new_databatch[key] = None  # Will be filled by pixel_loader below
+                    else:
+                        value_tensor = databatch[key][img_patch_mask]
+                        new_databatch[key] = value_tensor
                 else:
                     value_tensor = databatch[key][local_data_id]
                     new_databatch[key] = value_tensor.contiguous()
@@ -577,6 +597,8 @@ class Scheduler:
         else:
             max_local_len = max_padded_seqlen
             for key in databatch.keys():
+                if key.startswith('_'):
+                    continue
                 if databatch[key] is None:
                     new_databatch[key] = databatch[key]
                     continue
@@ -592,11 +614,28 @@ class Scheduler:
                         value_tensor = value_tensor[:, :max_local_len]
                     new_databatch[key] = value_tensor
                 elif key in ['pixel_values', 'image_flags']:
-                    value_tensor = databatch[key][img_patch_mask]
-                    new_databatch[key] = value_tensor
+                    if _lightweight_mode:
+                        new_databatch[key] = None  # Will be filled by pixel_loader below
+                    else:
+                        value_tensor = databatch[key][img_patch_mask]
+                        new_databatch[key] = value_tensor
                 else:
                     value_tensor = databatch[key][local_data_id]
                     new_databatch[key] = value_tensor.contiguous()
+
+        # Two-phase loading: load pixel_values for only this rank's assigned samples
+        if _lightweight_mode:
+            pv, flags = self.pixel_loader(databatch, local_data_id)
+            # Move to the same device/dtype as the rest of the batch.
+            # The batch was already moved to NPU+bf16 by move_to_device() in pretrain_vlm.py.
+            ref = databatch.get('input_ids')
+            if ref is None:
+                ref = databatch.get('attention_mask')
+            if ref is not None and pv is not None:
+                pv = pv.to(device=ref.device, dtype=torch.bfloat16)
+                flags = flags.to(device=ref.device)
+            new_databatch['pixel_values'] = pv
+            new_databatch['image_flags'] = flags
 
         # === DIAG: data format diagnostic (all ranks) ===
         _labels = new_databatch.get('labels', None)

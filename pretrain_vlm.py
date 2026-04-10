@@ -66,7 +66,6 @@ def model_provider(pre_process=True, post_process=True, modules=None):
     other_parallel_group_size = mpu.get_tensor_model_parallel_world_size() * mpu.get_pipeline_model_parallel_world_size()
     use_async = os.environ.get("ASYNC_SCHEDULE", "False") == "True"
     scheduler_cls = DoubleBufferedScheduler if use_async else Scheduler
-
     scheduler_kwargs = dict(
         cluster_size=torch.distributed.get_world_size(),
         other_parallel_group_size=other_parallel_group_size,
@@ -391,6 +390,65 @@ def forward_step(data_iterator, model):
     return output_tensor, loss_func
 
 
+def _get_img_processor_from_dataset(dataset):
+    """Extract img_video_processor from a dataset (handles ConcatDataset)."""
+    if hasattr(dataset, 'img_video_processor'):
+        return dataset.img_video_processor
+    if hasattr(dataset, 'datasets') and len(dataset.datasets) > 0:
+        return _get_img_processor_from_dataset(dataset.datasets[0])
+    return None
+
+
+def _set_skip_pixel_values(dataset, value=True):
+    """Recursively enable lightweight mode on MultiModalChatDataset instances."""
+    if hasattr(dataset, 'skip_pixel_values'):
+        dataset.skip_pixel_values = value
+    if hasattr(dataset, 'datasets'):
+        for d in dataset.datasets:
+            _set_skip_pixel_values(d, value)
+
+
+def _make_pixel_loader(img_processor):
+    """Build a pixel_loader callback for the Scheduler's two-phase loading."""
+    def pixel_loader(databatch, local_data_ids):
+        image_paths_all = databatch.get('_image_path', [])  # list[N]: each item is list of paths
+        image_modes_all = databatch.get('_image_mode', [])   # list[N]: mode string per sample
+
+        all_pixel_values = []
+        all_flags = []
+
+        for idx in local_data_ids:
+            paths = image_paths_all[idx]   # always a list
+            mode = image_modes_all[idx] if image_modes_all else 'single_image'
+
+            if mode == 'single_image':
+                pv = img_processor(image_path=paths[0], mode='single_image', num_image=1)['pixel_values']
+            elif mode == 'multi_image':
+                pv_parts = []
+                num_images = len(paths)
+                for p in paths:
+                    cur = img_processor(image_path=p, mode='multi_image', num_image=num_images)['pixel_values']
+                    pv_parts.extend(cur)
+                pv = torch.stack(pv_parts)
+            elif mode == 'video':
+                pv = img_processor(video_path=paths[0])['pixel_values']
+            else:
+                raise ValueError(f"Unknown image mode: {mode}")
+
+            num_patches = pv.shape[0]
+            all_pixel_values.append(pv)
+            all_flags.extend([1] * num_patches)
+
+        if all_pixel_values:
+            pixel_values = torch.cat(all_pixel_values, dim=0)
+        else:
+            pixel_values = None
+        image_flags = torch.tensor(all_flags, dtype=torch.long)
+        return pixel_values, image_flags
+
+    return pixel_loader
+
+
 def train_valid_test_datasets_provider(train_val_test_num_samples):
     """Build train, valid, and test datasets."""
     args = get_args()
@@ -405,7 +463,7 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
 
     datasets = build_mm_dataset(data_config.dataset_param)
 
-    # Save original MBS before any temporary modificationsf
+    # Save original MBS before any temporary modifications
     micro_batch_size = args.micro_batch_size
 
     if hybrid_parallel is not None and hybrid_parallel == "True":
@@ -421,6 +479,16 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
         # Temporarily enlarge MBS so DataLoader yields enough samples for all CP groups
         args.micro_batch_size = micro_batch_size * num_groups
         process_group = _SingleRankGroup()
+
+        # Two-phase loading: lightweight mode avoids loading pixel_values on all ranks.
+        # Each rank loads only the images assigned to it by the Scheduler.
+        _set_skip_pixel_values(datasets, value=True)
+        img_processor = _get_img_processor_from_dataset(datasets)
+        if img_processor is not None and data_scheduler is not None:
+            data_scheduler.set_pixel_loader(_make_pixel_loader(img_processor))
+            print_rank_0("[HybridParallel] Two-phase image loading enabled: pixel_values loaded per-rank after scheduling.")
+        else:
+            print_rank_0("[HybridParallel] Warning: could not enable two-phase image loading (no img_processor or scheduler).")
     else:
         process_group = mpu.get_data_parallel_group()
 

@@ -67,7 +67,10 @@ class DataCollatorForInternvl(object):
         # Handling of all other possible keys.
         # Again, we will use the first element to figure out which key/values are not None for this model.
         for k, v in first.items():
-            if k not in ("label", "label_ids", "pixel_values", "image_flags") and \
+            if k.startswith('_'):
+                # Private metadata keys (e.g. _image_path, _image_mode): collect as list
+                batch[k] = [f[k] for f in features]
+            elif k not in ("label", "label_ids", "pixel_values", "image_flags") and \
                     v is not None and not isinstance(v, str):
                 if isinstance(v, torch.Tensor):
                     batch[k] = torch.stack([f[k] for f in features])
@@ -76,7 +79,10 @@ class DataCollatorForInternvl(object):
                 else:
                     batch[k] = torch.tensor([f[k] for f in features])
             if k in ("pixel_values", "image_flags"):
-                if isinstance(v, torch.Tensor):
+                if v is None:
+                    # Lightweight mode: no pixel data loaded yet
+                    batch[k] = None
+                elif isinstance(v, torch.Tensor):
                     batch[k] = torch.concat([f[k] for f in features])
                 elif isinstance(v, np.ndarray):
                     batch[k] = torch.concat(np.stack([f[k] for f in features]))

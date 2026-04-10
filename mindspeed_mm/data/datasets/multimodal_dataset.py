@@ -66,9 +66,11 @@ class MultiModalChatDataset(MMBaseDataset):
             max_num_frame: int = 12, # for video data
             sampling_method: str = "rand", # for video data
             repeat_time: float = 1.0,
+            skip_pixel_values: bool = False,
             **kwargs,
     ):
         super().__init__(**basic_param)
+        self.skip_pixel_values = skip_pixel_values
         self.use_text_processer = use_text_processer
         self.template_name = template_name
         self.image_size = image_size
@@ -135,7 +137,9 @@ class MultiModalChatDataset(MMBaseDataset):
     
     def _filter_return_dict_keys(self, ret):
         allowed_keys = list(self._init_return_dict().keys())
-        keys_to_remove = [key for key in list(ret.keys()) if key not in allowed_keys]
+        # Private keys (starting with '_') are always allowed through
+        keys_to_remove = [key for key in list(ret.keys())
+                          if key not in allowed_keys and not key.startswith('_')]
         for key in keys_to_remove:
             ret.pop(key, None)
     
@@ -149,9 +153,18 @@ class MultiModalChatDataset(MMBaseDataset):
 
         ret = self._init_return_dict()
         image_path = self.get_path(data_item["image"])
-        ret_img = self.img_video_processor(image_path=image_path, mode='single_image', num_image=1)
-        ret.update(ret_img)
-        num_image_patches = ret["pixel_values"].size(0)
+
+        if self.skip_pixel_values:
+            # Lightweight mode: read image header only to get patch count, skip pixel loading
+            num_image_patches = self.img_video_processor.get_num_patches_from_path(
+                image_path, mode='single_image', num_image=1)
+            ret['pixel_values'] = None
+            ret['_image_path'] = [image_path]
+            ret['_image_mode'] = 'single_image'
+        else:
+            ret_img = self.img_video_processor(image_path=image_path, mode='single_image', num_image=1)
+            ret.update(ret_img)
+            num_image_patches = ret["pixel_values"].size(0)
 
         ret_tokenizer = preprocess(
             template_name=self.template_name,
@@ -169,21 +182,33 @@ class MultiModalChatDataset(MMBaseDataset):
         return ret
 
     def multi_modal_multi_image_get_item(self, data_item):
-        total_pixel_values, num_image_token_list = [], []
         num_images = len(data_item["image"])
-
-        for image_path in data_item["image"]:
-            image_path = self.get_path(image_path)
-
-            cur_pixel_values = self.img_video_processor(image_path=image_path, mode='multi_image', num_image=num_images)['pixel_values']
-            total_pixel_values += cur_pixel_values
-            num_image_token_list.append(self.num_image_token * len(cur_pixel_values))
-
-        total_pixel_values = torch.stack(total_pixel_values)
-        num_patches = total_pixel_values.size(0)
+        image_paths = [self.get_path(p) for p in data_item["image"]]
 
         ret = self._init_return_dict()
-        ret.update({"pixel_values": total_pixel_values})
+
+        if self.skip_pixel_values:
+            # Lightweight mode: read image headers only
+            num_image_token_list = []
+            num_patches = 0
+            for image_path in image_paths:
+                n = self.img_video_processor.get_num_patches_from_path(
+                    image_path, mode='multi_image', num_image=num_images)
+                num_image_token_list.append(self.num_image_token * n)
+                num_patches += n
+            ret['pixel_values'] = None
+            ret['_image_path'] = image_paths
+            ret['_image_mode'] = 'multi_image'
+        else:
+            total_pixel_values, num_image_token_list = [], []
+            for image_path in image_paths:
+                cur_pixel_values = self.img_video_processor(
+                    image_path=image_path, mode='multi_image', num_image=num_images)['pixel_values']
+                total_pixel_values += cur_pixel_values
+                num_image_token_list.append(self.num_image_token * len(cur_pixel_values))
+            total_pixel_values = torch.stack(total_pixel_values)
+            num_patches = total_pixel_values.size(0)
+            ret.update({"pixel_values": total_pixel_values})
 
         ret_tokenizer = preprocess(
             template_name=self.template_name,
@@ -203,7 +228,7 @@ class MultiModalChatDataset(MMBaseDataset):
         image_end_token_id = self.tokenizer.convert_tokens_to_ids(MODEL_CONSTANTS[self.template_name]["IMG_END_TOKEN"])
         if (ret["input_ids"] == image_end_token_id).sum() != num_images:
             raise ValueError(f"image tokens are truncated, this dataset is {self.data_path}")
-        
+
         return ret
 
     def pure_text_get_item(self, data_item):
@@ -216,9 +241,14 @@ class MultiModalChatDataset(MMBaseDataset):
 
         ret = self._init_return_dict()
         video_path = self.get_path(data_item["video"])
+        # Video always loads fully (frame count cannot be inferred from metadata alone)
         ret_video = self.img_video_processor(video_path=video_path, clip=data_item.get("clip", None))
         ret.update(ret_video)
         num_image_patches = ret["pixel_values"].size(0)
+        if self.skip_pixel_values:
+            ret['_image_path'] = [video_path]
+            ret['_image_mode'] = 'video'
+            # Keep pixel_values for video (needed for tokenization frame count)
 
         # Generate special tokens for each video frame
         special_tokens = "\n".join(["Frame-{}: <image>".format(i + 1) for i in range(len(ret["image_list"]))])
@@ -240,6 +270,10 @@ class MultiModalChatDataset(MMBaseDataset):
         ret.update(ret_tokenizer)
         ret["image_flags"] = torch.tensor([1] * num_image_patches, dtype=torch.long)
         self._filter_return_dict_keys(ret)
+
+        if self.skip_pixel_values:
+            # Discard pixel_values after tokenization; pixel_loader will reload later
+            ret['pixel_values'] = None
 
         return ret
 
