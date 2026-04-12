@@ -108,10 +108,22 @@ class Scheduler:
         rank_dict_local = self.rank_dicts[self.rank % self.other_parallel_group_size]
         return len(rank_dict_local)
 
-    def get_from_group_pool(self, rank_list):
+    def get_from_group_pool(self, rank_list, allow_create=True):
         group_uid = self.get_group_uid(rank_list)
         if group_uid in self.group_pool.keys():
             return self.group_pool[group_uid]
+        if not allow_create:
+            # mpu.create_group() is a collective op that requires all ranks to
+            # participate simultaneously.  Calling it from a background thread
+            # (DoubleBufferedScheduler._prefetch_worker) would deadlock because
+            # the other ranks are running forward/backward, not waiting here.
+            # This means warmup did not cover all group configurations — either
+            # extend warmup steps or file a bug report.
+            raise RuntimeError(
+                f"Group pool cache miss for ranks {rank_list} after warmup. "
+                "mpu.create_group() cannot be called from a background thread. "
+                "Increase warmup steps so all CP group configurations are cached."
+            )
         group = mpu.create_group(ranks=rank_list, use_local_synchronization=False)
         self.group_pool[group_uid] = group
         return group
@@ -917,11 +929,10 @@ class DoubleBufferedScheduler(Scheduler):
             rank_dict_local = buf.rank_dicts[self.rank % self.other_parallel_group_size]
             buf.local_group_ranks = rank_dict_local[str(buf.group_id)]
 
-            # Stage 4: Lookup process group from cache
-            # NOTE: get_from_group_pool may call mpu.create_group() on cache miss.
-            # During warmup, next_batch() runs synchronously so the pool gets
-            # populated.  After warmup, all groups should be cached already.
-            buf.cp_group = self.get_from_group_pool(buf.local_group_ranks)
+            # Stage 4: Lookup process group from cache (no create_group allowed here).
+            # All groups must have been created during warmup (synchronous path).
+            # Cache miss → raises RuntimeError, caught below as _prefetch_error.
+            buf.cp_group = self.get_from_group_pool(buf.local_group_ranks, allow_create=False)
 
             # Stage 5: Prepare data tensors (on separate CUDA stream)
             self._ensure_stream()

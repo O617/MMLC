@@ -27,13 +27,17 @@ from mindspeed_mm.utils.utils import EncoderBalanceComm
 from mindspeed_mm.utils.hetero_parallel import hetero_align_config
 from mindspeed_mm.utils.utils import compute_token_level_loss
 from scheduler import Scheduler, DoubleBufferedScheduler
+from hybrid_dataloader import (
+    HybridScheduledDataLoader,
+    set_skip_pixel_values,
+    get_img_processor_from_dataset,
+    make_pixel_loader,
+)
 from profiler import MLLMProfiler
 mindspeed_args = get_mindspeed_args()
 data_scheduler = None
 hybrid_parallel = os.environ.get("HYBRID_PARALLEL")
-# Double-buffered async prefetch state
-_prefetch_raw_batch = None  # raw batch pre-fetched for the next step
-_prefetch_started = False   # whether start_prefetch has been called
+_hybrid_loader = None  # HybridScheduledDataLoader instance (set in train_valid_test_datasets_provider)
 if hasattr(mindspeed_args, "ai_framework") and mindspeed_args.ai_framework == "mindspore" and mindspeed_args.optimization_level >= 0:
     import mindspeed_mm.mindspore.mindspore_adaptor
 
@@ -205,63 +209,19 @@ def _diag_raw_batch(batch):
 
 
 def get_batch(data_iterator, is_vit_last_stage=False):
-    """Generate a batch.
+    """Generate a batch."""
+    if _hybrid_loader is not None:
+        # Hybrid mode: all scheduling and two-phase image loading is handled
+        # by HybridScheduledDataLoader.  We only propagate is_vit_last_stage
+        # (a static property of the model, cheap to set each step) so that
+        # EncoderBalanceComm fires on the correct pipeline stage.
+        _hybrid_loader.set_vit_last_stage(is_vit_last_stage)
+        return next(data_iterator)
 
-    When ASYNC_SCHEDULE=True and using DoubleBufferedScheduler:
-      - During warmup: runs synchronously (populates group_pool cache).
-      - After warmup: consumes the prefetched result from the background
-        thread, then immediately kicks off prefetch for the *next* step.
-    """
-    global _prefetch_raw_batch, _prefetch_started
-
-    is_async = isinstance(data_scheduler, DoubleBufferedScheduler)
-    is_hybrid = hybrid_parallel is not None and hybrid_parallel == "True"
-
-    if is_async and is_hybrid and not data_scheduler.is_warmup() and _prefetch_started:
-        # ── Fast path: consume prefetched result ──
-        batch = data_scheduler.swap_and_get_data()
-        # EncoderBalanceComm was already applied to the raw batch before
-        # prefetch, and get_data filters pixel_values — so the balanced
-        # pixels are already in the result.  Just set tranfer from the
-        # prefetched raw batch.
-        batch['tranfer'] = _prefetch_raw_batch.get('tranfer', None) if _prefetch_raw_batch else None
-
-        # Kick off prefetch for the NEXT step
-        try:
-            next_raw = _load_raw_batch(data_iterator)
-            _diag_raw_batch(next_raw)
-            # Apply encoder balance to raw batch BEFORE scheduler sees it
-            _apply_encoder_balance(next_raw, is_vit_last_stage)
-            data_scheduler.start_prefetch(next_raw)
-            _prefetch_raw_batch = next_raw
-            _prefetch_started = True
-        except StopIteration:
-            # Epoch boundary — no more data to prefetch
-            _prefetch_started = False
-            _prefetch_raw_batch = None
-
-        return batch
-
-    # ── Slow path: synchronous (non-hybrid, warmup, or first call) ──
+    # ── Non-hybrid path ──────────────────────────────────────────────
     batch = _load_raw_batch(data_iterator)
     _diag_raw_batch(batch)
     _apply_encoder_balance(batch, is_vit_last_stage)
-
-    if is_hybrid:
-        batch = data_scheduler.next_batch(batch)
-
-        # After warmup completes, kick off the first prefetch
-        if is_async and not data_scheduler.is_warmup() and not _prefetch_started:
-            try:
-                next_raw = _load_raw_batch(data_iterator)
-                _diag_raw_batch(next_raw)
-                _apply_encoder_balance(next_raw, is_vit_last_stage)
-                data_scheduler.start_prefetch(next_raw)
-                _prefetch_raw_batch = next_raw
-                _prefetch_started = True
-            except StopIteration:
-                _prefetch_started = False
-
     return batch
 
 
@@ -397,67 +357,9 @@ def forward_step(data_iterator, model):
     return output_tensor, loss_func
 
 
-def _get_img_processor_from_dataset(dataset):
-    """Extract img_video_processor from a dataset (handles ConcatDataset)."""
-    if hasattr(dataset, 'img_video_processor'):
-        return dataset.img_video_processor
-    if hasattr(dataset, 'datasets') and len(dataset.datasets) > 0:
-        return _get_img_processor_from_dataset(dataset.datasets[0])
-    return None
-
-
-def _set_skip_pixel_values(dataset, value=True):
-    """Recursively enable lightweight mode on MultiModalChatDataset instances."""
-    if hasattr(dataset, 'skip_pixel_values'):
-        dataset.skip_pixel_values = value
-    if hasattr(dataset, 'datasets'):
-        for d in dataset.datasets:
-            _set_skip_pixel_values(d, value)
-
-
-def _make_pixel_loader(img_processor):
-    """Build a pixel_loader callback for the Scheduler's two-phase loading."""
-    def pixel_loader(databatch, local_data_ids):
-        image_paths_all = databatch.get('_image_path', [])  # list[N]: each item is list of paths
-        image_modes_all = databatch.get('_image_mode', [])   # list[N]: mode string per sample
-
-        all_pixel_values = []
-        all_flags = []
-
-        for idx in local_data_ids:
-            paths = image_paths_all[idx]   # always a list
-            mode = image_modes_all[idx] if image_modes_all else 'single_image'
-
-            if mode == 'single_image':
-                pv = img_processor(image_path=paths[0], mode='single_image', num_image=1)['pixel_values']
-            elif mode == 'multi_image':
-                pv_parts = []
-                num_images = len(paths)
-                for p in paths:
-                    cur = img_processor(image_path=p, mode='multi_image', num_image=num_images)['pixel_values']
-                    pv_parts.extend(cur)
-                pv = torch.stack(pv_parts)
-            elif mode == 'video':
-                pv = img_processor(video_path=paths[0])['pixel_values']
-            else:
-                raise ValueError(f"Unknown image mode: {mode}")
-
-            num_patches = pv.shape[0]
-            all_pixel_values.append(pv)
-            all_flags.extend([1] * num_patches)
-
-        if all_pixel_values:
-            pixel_values = torch.cat(all_pixel_values, dim=0)
-        else:
-            pixel_values = None
-        image_flags = torch.tensor(all_flags, dtype=torch.long)
-        return pixel_values, image_flags
-
-    return pixel_loader
-
-
 def train_valid_test_datasets_provider(train_val_test_num_samples):
     """Build train, valid, and test datasets."""
+    global _hybrid_loader
     args = get_args()
     data_config = args.mm.data
     if args.hetero_parallel:
@@ -472,8 +374,9 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
 
     # Save original MBS before any temporary modifications
     micro_batch_size = args.micro_batch_size
+    is_hybrid = hybrid_parallel is not None and hybrid_parallel == "True"
 
-    if hybrid_parallel is not None and hybrid_parallel == "True":
+    if is_hybrid:
         # Hybrid Parallel: every rank loads the same full batch, Scheduler distributes.
         # Use a dummy process_group with size=1 so BaseRandomBatchSampler generates
         # the same global permutation on all ranks (num_replicas=1, rank=0).
@@ -489,10 +392,10 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
 
         # Two-phase loading: lightweight mode avoids loading pixel_values on all ranks.
         # Each rank loads only the images assigned to it by the Scheduler.
-        _set_skip_pixel_values(datasets, value=True)
-        img_processor = _get_img_processor_from_dataset(datasets)
+        set_skip_pixel_values(datasets, value=True)
+        img_processor = get_img_processor_from_dataset(datasets)
         if img_processor is not None and data_scheduler is not None:
-            data_scheduler.set_pixel_loader(_make_pixel_loader(img_processor))
+            data_scheduler.set_pixel_loader(make_pixel_loader(img_processor))
             print_rank_0("[HybridParallel] Two-phase image loading enabled: pixel_values loaded per-rank after scheduling.")
         else:
             print_rank_0("[HybridParallel] Warning: could not enable two-phase image loading (no img_processor or scheduler).")
@@ -512,12 +415,13 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
             global_batch_size = global_batch_size // args.hetero_encoder_mbs_scale
         args.micro_batch_size = global_batch_size
 
+    # Build raw dataloaders (build_iterations is called after optional wrapping).
+    valid_dataloader = None
     if isinstance(datasets, tuple) and len(datasets) == 2:
         train_dataset, valid_dataset = datasets
         train_dataloader = build_dataloader(train_dataset)
         args.micro_batch_size = micro_batch_size
         valid_dataloader = build_dataloader(valid_dataset)
-        train_dataloader, valid_dataloader, test_dataloader = build_iterations(train_dataloader, valid_dataloader)
     else:
         train_dataset = datasets
         val_rate = getattr(data_config.dataset_param.basic_parameters, 'val_rate', 0.0)
@@ -529,11 +433,27 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
             train_dataloader = build_dataloader(train_dataset)
             args.micro_batch_size = micro_batch_size
             valid_dataloader = build_dataloader(valid_dataset)
-            train_dataloader, valid_dataloader, test_dataloader = build_iterations(train_dataloader, valid_dataloader)
         else:
             train_dataloader = build_dataloader(train_dataset)
             args.micro_batch_size = micro_batch_size
-            train_dataloader, valid_dataloader, test_dataloader = build_iterations(train_dataloader)
+
+    # Wrap train_dataloader with HybridScheduledDataLoader before build_iterations.
+    # build_iterations wraps dataloaders in a cyclic generator; calling next() on
+    # that generator transparently calls HybridScheduledDataLoader.__next__(), which
+    # runs the Scheduler and two-phase image loading for each step.
+    if is_hybrid:
+        _hybrid_loader = HybridScheduledDataLoader(
+            base_loader=train_dataloader,
+            scheduler=data_scheduler,
+            float_dtype=args.params_dtype,
+            encoder_dp_balance=getattr(args, 'encoder_dp_balance', False),
+        )
+        train_dataloader = _hybrid_loader
+
+    if valid_dataloader is not None:
+        train_dataloader, valid_dataloader, test_dataloader = build_iterations(train_dataloader, valid_dataloader)
+    else:
+        train_dataloader, valid_dataloader, test_dataloader = build_iterations(train_dataloader)
 
     if args.hetero_parallel and args.hetero_encoder_mbs_scale > 1:
         args.micro_batch_size = pp_mbs
