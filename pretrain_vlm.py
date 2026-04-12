@@ -347,20 +347,27 @@ def loss_func(output_tensor):
 
     is_hybrid = os.environ.get("HYBRID_PARALLEL", None) == "True"
     if is_hybrid:
-        # Hybrid Parallel: weight by num_samples so that each sample contributes
-        # equally to the gradient regardless of how many samples share a group.
-        # raw_loss is mean-of-per-sample-means; multiplying by num_samples
-        # recovers the sum, then /cp_size prevents double-counting within CP groups.
-        # After world all-reduce / world_size this gives Σ_all L_i / N.
         cp_size = mpu.get_context_parallel_world_size()
         dp_cp_group = mpu.get_data_parallel_group(with_context_parallel=True)
-        dp_cp_size = torch.distributed.get_world_size(group=dp_cp_group)
 
-        # logging_loss: all_reduce(raw_loss * num_samples / cp_size) / world_size
-        weighted_loss = loss.clone().detach() * num_samples / cp_size
+        num_groups = mpu.get_data_parallel_world_size()
+        other_ps = (mpu.get_tensor_model_parallel_world_size() *
+                    mpu.get_pipeline_model_parallel_world_size())
+        num_static_groups = (torch.distributed.get_world_size() //
+                             other_ps // args.context_parallel_size)
+        inflated_mbs = args.micro_batch_size * num_static_groups
+        mbs_per_group = inflated_mbs // num_groups
+
+        # Rescale: raw loss is mean over this group's num_samples.
+        # Multiply by (num_samples / mbs_per_group) so each sample contributes
+        # equal gradient weight regardless of BFD group size.
+        loss = loss * (num_samples / mbs_per_group)
+
+        # Logging: global mean = sum(loss_sum_g / MBS) / num_groups
+        weighted_loss = loss.clone().detach() / cp_size
         averaged_loss = weighted_loss.view(1)
         torch.distributed.all_reduce(averaged_loss, group=dp_cp_group)
-        averaged_loss = averaged_loss / dp_cp_size
+        averaged_loss = averaged_loss / num_groups
     else:
         averaged_loss = average_losses_across_data_parallel_group([loss])
 
