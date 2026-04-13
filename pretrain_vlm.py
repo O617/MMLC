@@ -33,6 +33,7 @@ from hybrid_dataloader import (
     get_img_processor_from_dataset,
     make_pixel_loader,
 )
+from synthetic_dataloader import build_synthetic_dataloader
 from profiler import MLLMProfiler
 mindspeed_args = get_mindspeed_args()
 data_scheduler = None
@@ -370,7 +371,9 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
             pp_mbs = args.micro_batch_size
             args.micro_batch_size = pp_mbs * args.hetero_encoder_mbs_scale
 
-    datasets = build_mm_dataset(data_config.dataset_param)
+    use_synthetic = os.environ.get("SYNTHETIC_DATA", "").lower() == "true"
+    if not use_synthetic:
+        datasets = build_mm_dataset(data_config.dataset_param)
 
     # Save original MBS before any temporary modifications
     micro_batch_size = args.micro_batch_size
@@ -390,52 +393,69 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
         args.micro_batch_size = micro_batch_size * num_groups
         process_group = _SingleRankGroup()
 
-        # Two-phase loading: lightweight mode avoids loading pixel_values on all ranks.
-        # Each rank loads only the images assigned to it by the Scheduler.
-        set_skip_pixel_values(datasets, value=True)
-        img_processor = get_img_processor_from_dataset(datasets)
-        if img_processor is not None and data_scheduler is not None:
-            data_scheduler.set_pixel_loader(make_pixel_loader(img_processor))
-            print_rank_0("[HybridParallel] Two-phase image loading enabled: pixel_values loaded per-rank after scheduling.")
-        else:
-            print_rank_0("[HybridParallel] Warning: could not enable two-phase image loading (no img_processor or scheduler).")
+        if not use_synthetic:
+            # Two-phase loading: lightweight mode avoids loading pixel_values on all ranks.
+            # Each rank loads only the images assigned to it by the Scheduler.
+            set_skip_pixel_values(datasets, value=True)
+            img_processor = get_img_processor_from_dataset(datasets)
+            if img_processor is not None and data_scheduler is not None:
+                data_scheduler.set_pixel_loader(make_pixel_loader(img_processor))
+                print_rank_0("[HybridParallel] Two-phase image loading enabled: pixel_values loaded per-rank after scheduling.")
+            else:
+                print_rank_0("[HybridParallel] Warning: could not enable two-phase image loading (no img_processor or scheduler).")
     else:
         process_group = mpu.get_data_parallel_group()
 
-    build_dataloader = partial(
-        build_mm_dataloader,
-        dataloader_param=data_config.dataloader_param,
-        process_group=process_group,
-        dataset_param=data_config.dataset_param,
-        consumed_samples=args.consumed_train_samples
-    )
-    if args.use_data_balance:
-        global_batch_size = args.micro_batch_size * get_num_microbatches()
-        if args.hetero_encoder_mbs_scale > 1:
-            global_batch_size = global_batch_size // args.hetero_encoder_mbs_scale
-        args.micro_batch_size = global_batch_size
-
     # Build raw dataloaders (build_iterations is called after optional wrapping).
     valid_dataloader = None
-    if isinstance(datasets, tuple) and len(datasets) == 2:
-        train_dataset, valid_dataset = datasets
-        train_dataloader = build_dataloader(train_dataset)
+    if use_synthetic:
+        train_dataloader = build_synthetic_dataloader(args.micro_batch_size)
+        _with_vis = os.environ.get('SYNTHETIC_WITH_VISION', 'false').lower() == 'true'
+        print_rank_0(
+            f"[SyntheticData] Synthetic dataloader enabled — "
+            f"batch_size={args.micro_batch_size}, "
+            f"min_len={os.environ.get('SYNTHETIC_MIN_LEN', 512)}, "
+            f"max_len={os.environ.get('SYNTHETIC_MAX_LEN', 8192)}, "
+            f"num_batches={os.environ.get('SYNTHETIC_NUM_BATCHES', 1000)}, "
+            f"with_vision={_with_vis}"
+            + (f", vision_ratio={os.environ.get('SYNTHETIC_VISION_RATIO', 0.8)}, "
+               f"tile_tokens={os.environ.get('SYNTHETIC_TILE_TOKENS', 256)}"
+               if _with_vis else "")
+        )
         args.micro_batch_size = micro_batch_size
-        valid_dataloader = build_dataloader(valid_dataset)
     else:
-        train_dataset = datasets
-        val_rate = getattr(data_config.dataset_param.basic_parameters, 'val_rate', 0.0)
-        if not (0.0 <= val_rate <= 1.0):
-            raise ValueError(f'val_rate must be between 0.0 and 1.0, got {val_rate}')
-        if isinstance(train_dataset, Dataset) and val_rate > 0:
-            dataset = train_dataset.train_test_split(test_size=val_rate, seed=args.seed)
-            train_dataset, valid_dataset = dataset['train'], dataset['test']
+        build_dataloader = partial(
+            build_mm_dataloader,
+            dataloader_param=data_config.dataloader_param,
+            process_group=process_group,
+            dataset_param=data_config.dataset_param,
+            consumed_samples=args.consumed_train_samples
+        )
+        if args.use_data_balance:
+            global_batch_size = args.micro_batch_size * get_num_microbatches()
+            if args.hetero_encoder_mbs_scale > 1:
+                global_batch_size = global_batch_size // args.hetero_encoder_mbs_scale
+            args.micro_batch_size = global_batch_size
+
+        if isinstance(datasets, tuple) and len(datasets) == 2:
+            train_dataset, valid_dataset = datasets
             train_dataloader = build_dataloader(train_dataset)
             args.micro_batch_size = micro_batch_size
             valid_dataloader = build_dataloader(valid_dataset)
         else:
-            train_dataloader = build_dataloader(train_dataset)
-            args.micro_batch_size = micro_batch_size
+            train_dataset = datasets
+            val_rate = getattr(data_config.dataset_param.basic_parameters, 'val_rate', 0.0)
+            if not (0.0 <= val_rate <= 1.0):
+                raise ValueError(f'val_rate must be between 0.0 and 1.0, got {val_rate}')
+            if isinstance(train_dataset, Dataset) and val_rate > 0:
+                dataset = train_dataset.train_test_split(test_size=val_rate, seed=args.seed)
+                train_dataset, valid_dataset = dataset['train'], dataset['test']
+                train_dataloader = build_dataloader(train_dataset)
+                args.micro_batch_size = micro_batch_size
+                valid_dataloader = build_dataloader(valid_dataset)
+            else:
+                train_dataloader = build_dataloader(train_dataset)
+                args.micro_batch_size = micro_batch_size
 
     # Wrap train_dataloader with HybridScheduledDataLoader before build_iterations.
     # build_iterations wraps dataloaders in a cyclic generator; calling next() on
