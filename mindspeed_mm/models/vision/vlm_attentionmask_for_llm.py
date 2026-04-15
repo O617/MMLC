@@ -1064,6 +1064,15 @@ def _build_attentionmask_positionid_internllm(attention_mask, position_ids, dtyp
         attention_mask = None
         return attention_mask, position_ids
 
+    # Skip the [T, T] causal mask materialisation when using a packed TND
+    # layout: FlashAttention's variable-length kernel handles sub-sequence
+    # boundaries and causality directly from cu_seqlens_q, so the dense mask
+    # is both redundant and memory-prohibitive at long T (131072² × fp32 =
+    # 64 GiB per rank).
+    packed_seq_params = kwargs.get("packed_seq_params", None)
+    if packed_seq_params is not None and getattr(packed_seq_params, "cu_seqlens_q", None) is not None:
+        return None, position_ids
+
     input_shape = attention_mask.shape
     # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
     combined_attention_mask = None

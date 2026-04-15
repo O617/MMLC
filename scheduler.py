@@ -57,7 +57,8 @@ def pad_len_to(data_len, pad_num):
 
 class Scheduler:
     def __init__(self, cluster_size, other_parallel_group_size, img_context_token_id, cp_window_size,
-                 schedule_mode="dynamic"):
+                 schedule_mode="dynamic", seq_len_chunk=8704, max_cp_degree=32,
+                 cp_must_be_power_of_two=False):
         self.data_dict = None
         self.hybrid_group = None
         self.cluster_size = cluster_size
@@ -73,6 +74,25 @@ class Scheduler:
         self.dp_group_ranks = None
         self.schedule_mode = schedule_mode
         self.pixel_loader = None  # Optional callback for two-phase image loading
+        # Per-rank token budget used by BFD packing and min_cp computation.
+        # Coupling invariant: synthetic_dataloader's token_budget_per_gpu MUST equal
+        # this value so the producer never hands the scheduler more tokens than the
+        # cluster can absorb.  InternVL3 (VLMModel path) uses 9216 historically;
+        # Qwen3VL (TransformersModel/HF path) uses 8192 so ceil(256k/chunk)=32 keeps
+        # the largest supported burst within CP<=32.
+        self.seq_len_chunk = int(seq_len_chunk)
+        # Upper bound on CP degree any group may receive.  For Ulysses this must
+        # be ≤ num_attention_heads of the model (e.g. 32 for Qwen3VL-4B, 16 for 2B)
+        # because Ulysses splits Q heads across CP ranks.  For Ring it can be any
+        # positive integer ≤ cluster size.
+        self.max_cp_degree = int(max_cp_degree)
+        # Constraint on CP values produced by the rank-conservation inflation
+        # post-process.  When True (Ulysses path), every inflated CP must be a
+        # power of 2 so that num_attention_heads divides it cleanly — this
+        # restricts inflation to CP ← 2×CP doublings.  When False (Ring path,
+        # the InternVL3 default), CP can be any positive integer ≤ max_cp_degree
+        # so inflation grows groups by +1 in round-robin.
+        self.cp_must_be_power_of_two = bool(cp_must_be_power_of_two)
 
     def set_pixel_loader(self, pixel_loader):
         """Set a callback for loading pixel_values after scheduling (two-phase mode).
@@ -158,6 +178,7 @@ class Scheduler:
         local_group_ranks =  rank_dict_local[str(self.group_id)]
         mpu._CONTEXT_PARALLEL_GROUP = self.hybrid_group
         mpu._CONTEXT_PARALLEL_GLOBAL_RANKS = local_group_ranks
+        ms_mpu._CONTEXT_PARALLEL_GROUP_FOR_SEND_RECV_OVERLAP = self.hybrid_group
         # mpu._DATA_PARALLEL_GROUP = self.dp_group
         # mpu._DATA_PARALLEL_GLOBAL_RANKS
         ms_mpu._CONTEXT_PARALLEL_RANKS_FOR_RING_INTER_WINDOW_KV = [local_group_ranks[idx] for idx in range(0, cp_size, 1)]
@@ -282,29 +303,50 @@ class Scheduler:
         return groups
 
 
-    def dp_resource_allocation(self, groups, total_ranks, time_estimator, max_cp_degree=None):
+    def dp_resource_allocation(self, groups, total_ranks, time_estimator, max_cp_degree=None,
+                               cp_must_be_power_of_two=False):
         """
         Stage 2: Optimal Resource Assignment via 2D Dynamic Programming.
-        
+
         Finds near-optimal CP degree assignment for each atomic group to minimize
         makespan (maximum execution time across all groups).
-        
+
         Args:
             groups: list of groups from Stage 1
             total_ranks: total number of available ranks for CP
             time_estimator: function(seqlen, cp_size) -> estimated time
             max_cp_degree: optional upper bound on CP degree
-        
+            cp_must_be_power_of_two: restrict the enumerated CP values to
+                powers of two (required for Ulysses CP so that num_attention_heads
+                divides cp_size cleanly; disabled by default for Ring, which
+                accepts arbitrary positive CPs).
+
         Returns:
             assignments: list of dicts with 'seq_ids', 'cp_degree', 'estimated_time'
         """
         if not groups:
             return []
-        
+
         K = len(groups)
         if max_cp_degree is None:
             max_cp_degree = total_ranks
-        
+
+        def _candidate_cps(min_cp_g, upper):
+            """Ordered list of legal CP values in [min_cp_g, upper]."""
+            upper = min(upper, total_ranks)
+            if cp_must_be_power_of_two:
+                # Round min_cp_g UP to next power of two so no smaller-than-requested
+                # cp is emitted; iterate powers of two up to `upper`.
+                cp = 1
+                while cp < min_cp_g:
+                    cp <<= 1
+                out = []
+                while cp <= upper:
+                    out.append(cp)
+                    cp <<= 1
+                return out
+            return list(range(min_cp_g, upper + 1))
+
         # Precompute time estimates for each group at different CP degrees
         group_time_table = []
         for group in groups:
@@ -313,50 +355,50 @@ class Scheduler:
             seqlens = group['seqlens']
             num_seqs = len(group['seq_ids'])
             avg_seqlen = total_seqlen / num_seqs if num_seqs > 0 else 0
-            
-            for cp in range(group['min_cp'], min(max_cp_degree + 1, total_ranks + 1)):
+
+            for cp in _candidate_cps(group['min_cp'], max_cp_degree):
                 # Estimate group time: sum of individual sequence times
                 # Simplified: use average sequence length scaled by group size
                 effective_seqlen = int(total_seqlen)  # Total work
                 t = time_estimator(seqlens, cp)
                 times[cp] = t
             group_time_table.append(times)
-        
+
         # DP initialization
         INF = float('inf')
         # DP[i][j]: min makespan for first i groups using exactly j ranks
         DP = [[INF] * (total_ranks + 1) for _ in range(K + 1)]
         Path = [[-1] * (total_ranks + 1) for _ in range(K + 1)]
-        
+
         for i in range(total_ranks): DP[0][i] = 0
-        
+
         # Fill DP table
         for i in range(1, K + 1):
             g_idx = i - 1
             min_cp = groups[g_idx]['min_cp']
-            
+
             # Precompute min ranks needed for remaining groups (pruning)
             min_remaining = sum(groups[z]['min_cp'] for z in range(g_idx + 1, K))
-            
+
             for j in range(total_ranks + 1):
                 # Minimum ranks this group needs
                 if j < min_cp:
                     continue
-                
+
                 # Maximum ranks we can assign to this group
                 max_for_this = j - min_remaining
                 # if max_for_this < min_cp:
                 #     continue
-                
-                for cp in range(min_cp, min(max_cp_degree, j) + 1):
+
+                for cp in _candidate_cps(min_cp, min(max_cp_degree, j)):
                     prev_ranks = j - cp
                     if prev_ranks < 0 or DP[i-1][prev_ranks] == INF:
                         continue
-                    
+
                     current_time = group_time_table[g_idx].get(cp, INF)
                     # Makespan = max of previous groups and current group
                     makespan = max(DP[i-1][prev_ranks], current_time)
-                    
+
                     if makespan < DP[i][j]:
                         DP[i][j] = makespan
                         Path[i][j] = cp
@@ -403,7 +445,7 @@ class Scheduler:
         input_ids = databatch['input_ids']
         attention_mask = databatch['attention_mask']
         self.data_len = torch.sum(attention_mask, dim=1) + 1
-        seq_len_chunk = 8192
+        seq_len_chunk = self.seq_len_chunk
 
         # Compute sequence lengths [batch_size]
         data_len = torch.sum(attention_mask, dim=1) + 1
@@ -416,11 +458,31 @@ class Scheduler:
         seq_lens = data_len.tolist()
 
         # Calculate minimum CP degree for each sequence
-        # Heuristic: longer sequences benefit more from parallelism
+        # Heuristic: longer sequences benefit more from parallelism.
+        # CAP at max_cp_degree (== num_attention_heads for Ulysses) because
+        # Ulysses cannot assign a CP group larger than the number of attention
+        # heads.  Without this cap, a burst of 131073 tokens at chunk=8192 would
+        # demand min_cp=17 which exceeds 2B's 16-head limit and forces DP to
+        # fall back to 17, producing an invalid CP group.
+        #
+        # When cp_must_be_power_of_two (Ulysses), also round min_cp UP to the
+        # next power of two — BFD uses min_cp to compute bin capacity and later
+        # passes the resulting group.min_cp to DP, so both stages must agree on
+        # a legal starting point.
+        def _round_up_pow2(x):
+            p = 1
+            while p < x:
+                p <<= 1
+            return p
+
         max_available_cp = self.cluster_size // self.other_parallel_group_size
         min_cp_degrees = {}
         for seq_id, seqlen in zip(seq_ids, seq_lens):
-            min_cp_degrees[seq_id] = (seqlen + seq_len_chunk - 1) // seq_len_chunk
+            raw_min_cp = (seqlen + seq_len_chunk - 1) // seq_len_chunk
+            mc = min(raw_min_cp, self.max_cp_degree)
+            if self.cp_must_be_power_of_two and mc > 0:
+                mc = min(_round_up_pow2(mc), self.max_cp_degree)
+            min_cp_degrees[seq_id] = mc
 
         # Stage 1: Sequence Packing via Best-Fit Decreasing
         sequences = list(zip(seq_ids, seq_lens))
@@ -442,7 +504,8 @@ class Scheduler:
             groups,
             total_available_ranks,
             self.mock_time_estimator,
-            max_cp_degree=min(8, total_available_ranks)
+            max_cp_degree=min(self.max_cp_degree, total_available_ranks),
+            cp_must_be_power_of_two=self.cp_must_be_power_of_two,
         )
 
         # Convert to output format
@@ -463,6 +526,64 @@ class Scheduler:
             else:
                 data_list.append(unassigned)
                 group_list.append(1)
+
+        # Rank-conservation invariant: update_rank_dicts allocates rank IDs
+        # cumulatively from 0, so sum(group_list) must equal total_available_ranks
+        # — otherwise high-indexed ranks end up unassigned and get_group_id() raises.
+        # The DP solver sometimes leaves slack (e.g. burst saturates at
+        # max_cp_degree while filler groups need fewer ranks than available).
+        #
+        # Two inflation strategies depending on which CP algo the caller uses:
+        #   * Ring (cp_must_be_power_of_two=False, InternVL3 default): any
+        #     positive integer CP is legal, so we grow groups by +1 in
+        #     round-robin until the slack is absorbed.
+        #   * Ulysses (cp_must_be_power_of_two=True, Qwen3VL): CP must divide
+        #     num_attention_heads (== max_cp_degree for Qwen3VL's power-of-two
+        #     head counts), so we only allow CP ← 2×CP doublings.
+        delta = total_available_ranks - sum(group_list)
+        if delta > 0:
+            if self.cp_must_be_power_of_two:
+                # Ulysses: round-robin doubling.
+                made_progress = True
+                while delta > 0 and made_progress:
+                    made_progress = False
+                    for i in range(len(group_list)):
+                        if delta <= 0:
+                            break
+                        cur = group_list[i]
+                        if cur <= 0 or cur >= self.max_cp_degree:
+                            continue
+                        next_cp = cur * 2
+                        if next_cp > self.max_cp_degree:
+                            continue
+                        step = next_cp - cur  # = cur (one doubling step)
+                        if step > delta:
+                            continue
+                        group_list[i] = next_cp
+                        delta -= step
+                        made_progress = True
+            else:
+                # Ring: round-robin +1 (any positive integer CP is legal).
+                made_progress = True
+                while delta > 0 and made_progress:
+                    made_progress = False
+                    for i in range(len(group_list)):
+                        if delta <= 0:
+                            break
+                        if group_list[i] >= self.max_cp_degree:
+                            continue
+                        group_list[i] += 1
+                        delta -= 1
+                        made_progress = True
+
+        if sum(group_list) != total_available_ranks:
+            raise RuntimeError(
+                f"[Scheduler] rank-conservation failed: sum(group_list)={sum(group_list)} "
+                f"!= total_available_ranks={total_available_ranks}, "
+                f"group_list={group_list}, max_cp_degree={self.max_cp_degree}, "
+                f"cp_must_be_power_of_two={self.cp_must_be_power_of_two}. "
+                f"Consider reducing MBS or increasing max_cp_degree."
+            )
 
         return group_list, data_list
 
@@ -547,17 +668,49 @@ class Scheduler:
         cu_seqlens_q = torch.tensor(padded_cumsum, dtype=torch.int32).npu()
         cu_seqlens_q_padded = torch.tensor(padded_cumsum, dtype=torch.int32).npu()
 
-        # --- Image patch mask (unchanged logic) ---
-        img_token_mask = torch.eq(databatch['input_ids'], self.img_context_token_id)
-        img_token_per_seq = torch.sum(img_token_mask, dim=-1)
-        img_token_sum = torch.sum(img_token_per_seq)
-        img_token_per_patch = img_token_sum // torch.sum(databatch['image_flags'])
-        img_patch_cumsum = (img_token_per_seq // img_token_per_patch).cumsum(0)
-        img_patch_cumsum_ = torch.zeros_like(img_patch_cumsum)
-        img_patch_cumsum_[1:] = img_patch_cumsum[:-1]
-        img_patch_mask = torch.zeros_like(databatch['image_flags'], dtype=torch.bool)
-        for data_id in local_data_id:
-            img_patch_mask[img_patch_cumsum_[data_id]:img_patch_cumsum[data_id]] = True
+        # --- Image patch mask ---
+        # For models that don't produce image_flags in the batch (e.g. Qwen3VL via the
+        # huggingface dataset pipeline), generate a synthetic all-ones tensor with one
+        # entry per *merged* image patch, which equals the number of img_context_token_id
+        # occurrences in input_ids.  This keeps img_token_per_patch == 1 and avoids the
+        # integer-division underflow that occurs when image_flags length equals the number
+        # of *raw* ViT patches (which can be spatial_merge_size^2 larger).
+        if databatch.get('image_flags') is None:
+            img_token_mask_tmp = torch.eq(databatch['input_ids'], self.img_context_token_id)
+            n_img_tokens = int(img_token_mask_tmp.sum().item())
+            ref_device = databatch['pixel_values'].device if databatch.get('pixel_values') is not None \
+                else databatch['input_ids'].device
+            databatch['image_flags'] = torch.ones(n_img_tokens, dtype=torch.long, device=ref_device)
+
+        # Text-only fast path: no image tokens anywhere in the batch.  Skip the
+        # image-patch mask computation (which would divide by zero on FloorDiv via
+        # img_token_sum // sum(image_flags) when image_flags is empty) and leave
+        # pv_patch_mask empty so the pixel_values/image_flags slicing below produces
+        # None.  This is what enables synthetic text-only data to flow through.
+        if databatch['image_flags'].numel() == 0:
+            img_patch_mask = torch.zeros(0, dtype=torch.bool,
+                                         device=databatch['image_flags'].device)
+        else:
+            img_token_mask = torch.eq(databatch['input_ids'], self.img_context_token_id)
+            img_token_per_seq = torch.sum(img_token_mask, dim=-1)
+            img_token_sum = torch.sum(img_token_per_seq)
+            img_token_per_patch = img_token_sum // torch.sum(databatch['image_flags'])
+            img_patch_cumsum = (img_token_per_seq // img_token_per_patch).cumsum(0)
+            img_patch_cumsum_ = torch.zeros_like(img_patch_cumsum)
+            img_patch_cumsum_[1:] = img_patch_cumsum[:-1]
+            img_patch_mask = torch.zeros_like(databatch['image_flags'], dtype=torch.bool)
+            for data_id in local_data_id:
+                img_patch_mask[img_patch_cumsum_[data_id]:img_patch_cumsum[data_id]] = True
+
+        # When pixel_values has more rows than image_flags (e.g. Qwen3VL where image_flags
+        # counts merged patches but pixel_values contains raw ViT patches before spatial
+        # merging), expand the mask so that each logical patch maps to expand_factor raw rows.
+        pv = databatch.get('pixel_values')
+        if pv is not None and img_patch_mask.shape[0] > 0 and pv.shape[0] > img_patch_mask.shape[0]:
+            _pv_expand = pv.shape[0] // img_patch_mask.shape[0]
+            pv_patch_mask = img_patch_mask.repeat_interleave(_pv_expand)
+        else:
+            pv_patch_mask = img_patch_mask
 
         # In two-phase (lightweight) mode pixel_values is None in the raw batch.
         # The pixel_loader callback will fill it after scheduling.
@@ -588,12 +741,18 @@ class Scheduler:
                             value_tensor[data_idx, :real_len]
                         )
                     new_databatch[key] = new_value_tensor.unsqueeze(0)
-                elif key in ['pixel_values', 'image_flags']:
+                elif key == 'pixel_values':
                     if _lightweight_mode:
                         new_databatch[key] = None  # Will be filled by pixel_loader below
                     else:
+                        value_tensor = databatch[key][pv_patch_mask]
+                        new_databatch[key] = value_tensor if value_tensor.shape[0] > 0 else None
+                elif key == 'image_flags':
+                    if _lightweight_mode:
+                        new_databatch[key] = None
+                    else:
                         value_tensor = databatch[key][img_patch_mask]
-                        new_databatch[key] = value_tensor
+                        new_databatch[key] = value_tensor if value_tensor.shape[0] > 0 else None
                 else:
                     value_tensor = databatch[key][local_data_id]
                     new_databatch[key] = value_tensor.contiguous()
@@ -630,7 +789,7 @@ class Scheduler:
                         new_databatch[key] = None  # Will be filled by pixel_loader below
                     else:
                         value_tensor = databatch[key][img_patch_mask]
-                        new_databatch[key] = value_tensor
+                        new_databatch[key] = value_tensor if value_tensor.shape[0] > 0 else None
                 else:
                     value_tensor = databatch[key][local_data_id]
                     new_databatch[key] = value_tensor.contiguous()
@@ -649,60 +808,19 @@ class Scheduler:
             new_databatch['pixel_values'] = pv
             new_databatch['image_flags'] = flags
 
-        # === DIAG: data format diagnostic (all ranks) ===
-        _labels = new_databatch.get('labels', None)
-        _input_ids = new_databatch.get('input_ids', None)
-        _lbl_shape = tuple(_labels.shape) if _labels is not None else None
-        _ids_shape = tuple(_input_ids.shape) if _input_ids is not None else None
-        _valid_tokens = int((_labels > -1).sum()) if _labels is not None else 0
-        # First 20 non-padding label values for fingerprinting
-        if _labels is not None:
-            _flat = _labels.flatten()
-            _nonpad_mask = _flat > -1
-            _nonpad_vals = _flat[_nonpad_mask][:20].tolist()
-        else:
-            _nonpad_vals = []
-        _has_psp = 'packed_seq_params' in new_databatch and new_databatch['packed_seq_params'] is not None
-        _cu = None
-        if _has_psp:
-            _cu = new_databatch['packed_seq_params'].cu_seqlens_q.tolist()
-        print(f"[DIAG-DATA] rank={self.rank} layout={data_layout} mode={self.schedule_mode} "
-              f"group_id={self.group_id} "
-              f"labels_shape={_lbl_shape} input_ids_shape={_ids_shape} "
-              f"valid_tokens={_valid_tokens} "
-              f"real_seqlens={real_seqlens} padded_seqlens={padded_seqlens} "
-              f"has_packed_seq_params={_has_psp} cu_seqlens={_cu} "
-              f"first20_labels={_nonpad_vals}")
-        # === END DIAG ===
-
         return new_databatch
-    
+
     @timing
     def next_batch(self, databatch):
-        if torch.distributed.get_rank() == 0:
-            print("Execute Next Batch Function")
         self.data_dict = {}
         if self.schedule_mode == "naive":
             group_list, data_list = self.compute_parallel_method_naive(databatch)
         else:
             group_list, data_list = self.compute_parallel_method(databatch)
 
-        # === DIAG: scheduling decision (all ranks) ===
-        print(f"[DIAG-SCHED] rank={self.rank} mode={self.schedule_mode} "
-              f"group_list={group_list} data_list={data_list} "
-              f"data_len={self.data_len.tolist()}")
-        # === END DIAG ===
-
         self.update_rank_dicts(group_list)
         self.update_group_data_id(data_list)
         self.update_parallel_group()
-
-        # === DIAG: per-rank group assignment (all ranks) ===
-        rank_dict_local = self.rank_dicts[self.rank % self.other_parallel_group_size]
-        print(f"[DIAG-SCHED] rank={self.rank} group_id={self.group_id} "
-              f"cp_group_ranks={rank_dict_local.get(str(self.group_id), 'N/A')} "
-              f"data_ids={self.data_dict.get(str(self.group_id), 'N/A')}")
-        # === END DIAG ===
 
         return self.get_data(databatch)
 
@@ -834,16 +952,42 @@ class DoubleBufferedScheduler(Scheduler):
                                            device=databatch['input_ids'].device)
 
         # --- Image patch mask ---
-        img_token_mask = torch.eq(databatch['input_ids'], self.img_context_token_id)
-        img_token_per_seq = torch.sum(img_token_mask, dim=-1)
-        img_token_sum = torch.sum(img_token_per_seq)
-        img_token_per_patch = img_token_sum // torch.sum(databatch['image_flags'])
-        img_patch_cumsum = (img_token_per_seq // img_token_per_patch).cumsum(0)
-        img_patch_cumsum_ = torch.zeros_like(img_patch_cumsum)
-        img_patch_cumsum_[1:] = img_patch_cumsum[:-1]
-        img_patch_mask = torch.zeros_like(databatch['image_flags'], dtype=torch.bool)
-        for data_id in local_data_id:
-            img_patch_mask[img_patch_cumsum_[data_id]:img_patch_cumsum[data_id]] = True
+        # Synthesise image_flags when absent (e.g. Qwen3VL / huggingface dataset pipeline).
+        # One flag per *merged* image patch == one per img_context_token_id occurrence.
+        if databatch.get('image_flags') is None:
+            img_token_mask_tmp = torch.eq(databatch['input_ids'], self.img_context_token_id)
+            n_img_tokens = int(img_token_mask_tmp.sum().item())
+            ref_device = databatch['pixel_values'].device if databatch.get('pixel_values') is not None \
+                else databatch['input_ids'].device
+            databatch['image_flags'] = torch.ones(n_img_tokens, dtype=torch.long, device=ref_device)
+
+        # Text-only fast path: no image tokens anywhere in the batch.  Skip the
+        # image-patch mask computation (which would divide by zero on FloorDiv via
+        # img_token_sum // sum(image_flags) when image_flags is empty) and leave
+        # pv_patch_mask empty so the pixel_values/image_flags slicing below produces
+        # None.  This is what enables synthetic text-only data to flow through.
+        if databatch['image_flags'].numel() == 0:
+            img_patch_mask = torch.zeros(0, dtype=torch.bool,
+                                         device=databatch['image_flags'].device)
+        else:
+            img_token_mask = torch.eq(databatch['input_ids'], self.img_context_token_id)
+            img_token_per_seq = torch.sum(img_token_mask, dim=-1)
+            img_token_sum = torch.sum(img_token_per_seq)
+            img_token_per_patch = img_token_sum // torch.sum(databatch['image_flags'])
+            img_patch_cumsum = (img_token_per_seq // img_token_per_patch).cumsum(0)
+            img_patch_cumsum_ = torch.zeros_like(img_patch_cumsum)
+            img_patch_cumsum_[1:] = img_patch_cumsum[:-1]
+            img_patch_mask = torch.zeros_like(databatch['image_flags'], dtype=torch.bool)
+            for data_id in local_data_id:
+                img_patch_mask[img_patch_cumsum_[data_id]:img_patch_cumsum[data_id]] = True
+
+        # Expand mask when pixel_values has more rows than image_flags (e.g. Qwen3VL).
+        pv = databatch.get('pixel_values')
+        if pv is not None and img_patch_mask.shape[0] > 0 and pv.shape[0] > img_patch_mask.shape[0]:
+            _pv_expand = pv.shape[0] // img_patch_mask.shape[0]
+            pv_patch_mask = img_patch_mask.repeat_interleave(_pv_expand)
+        else:
+            pv_patch_mask = img_patch_mask
 
         if data_layout == "TND":
             for key in databatch.keys():
@@ -864,8 +1008,12 @@ class DoubleBufferedScheduler(Scheduler):
                             value_tensor[data_idx, :real_len]
                         )
                     new_databatch[key] = new_value_tensor.unsqueeze(0)
-                elif key in ['pixel_values', 'image_flags']:
-                    new_databatch[key] = databatch[key][img_patch_mask]
+                elif key == 'pixel_values':
+                    value_tensor = databatch[key][pv_patch_mask]
+                    new_databatch[key] = value_tensor if value_tensor.shape[0] > 0 else None
+                elif key == 'image_flags':
+                    value_tensor = databatch[key][img_patch_mask]
+                    new_databatch[key] = value_tensor if value_tensor.shape[0] > 0 else None
                 else:
                     new_databatch[key] = databatch[key][local_data_id].contiguous()
             new_databatch["packed_seq_params"] = PackedSeqParams(
@@ -898,7 +1046,8 @@ class DoubleBufferedScheduler(Scheduler):
                         value_tensor = value_tensor[:, :max_local_len]
                     new_databatch[key] = value_tensor
                 elif key in ['pixel_values', 'image_flags']:
-                    new_databatch[key] = databatch[key][img_patch_mask]
+                    value_tensor = databatch[key][img_patch_mask]
+                    new_databatch[key] = value_tensor if value_tensor.shape[0] > 0 else None
                 else:
                     new_databatch[key] = databatch[key][local_data_id].contiguous()
 

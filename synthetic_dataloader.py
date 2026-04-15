@@ -7,7 +7,8 @@ Each batch matches the dict structure that data_collator produces:
 
   Text-only mode (SYNTHETIC_WITH_VISION unset or False):
     - input_ids:      [B, max_len]  random token IDs
-    - labels:         [B, max_len]  same as input_ids, -100 for padding
+    - labels:         [B, max_len]  input_ids shifted right by 1 (copy task);
+                                    first text position and padding are -100
     - attention_mask: [B, max_len]  bool
 
   Vision mode (SYNTHETIC_WITH_VISION=true):
@@ -301,12 +302,16 @@ class BurstLengthSampler(LengthSampler):
         n_rest = batch_size - 1
         remaining_budget = self.max_total_tokens - self.burst_len
 
-        # Target length for each of the B-1 companion sequences
+        # Target length for each of the B-1 companion sequences.
+        # Divide by (1 + burst_noise) so the upper end of the jitter window
+        # (target × (1 + burst_noise)) still fits in remaining_budget — otherwise
+        # the per-filler noise can push the total ~10% over the cluster budget
+        # and trip the scheduler's rank-demand assertion.
         if remaining_budget <= n_rest * self.min_len:
             # Edge case: budget too tight even for min_len — give everyone min_len
             target = float(self.min_len)
         else:
-            target = remaining_budget / n_rest
+            target = remaining_budget / (n_rest * (1.0 + self.burst_noise))
             target = min(target, float(self._normal_max))
 
         # Jitter: ±burst_noise × target, then clamp to [min_len, normal_max]
@@ -319,10 +324,34 @@ class BurstLengthSampler(LengthSampler):
             .tolist()
         )
 
+        # Hard post-hoc guarantee: if the sum of filler lengths still exceeds
+        # remaining_budget (possible when min_len is forced by the edge-case branch
+        # above), scale them down proportionally so total ≤ max_total_tokens.
+        filler_sum = sum(rest_lengths)
+        if filler_sum > remaining_budget and filler_sum > 0:
+            scale = remaining_budget / filler_sum
+            rest_lengths = [max(self.min_len, int(l * scale)) for l in rest_lengths]
+            # Final trim: if still over budget due to min_len floor, shave the
+            # last entries one token at a time until we fit.
+            overflow = sum(rest_lengths) - remaining_budget
+            idx = len(rest_lengths) - 1
+            while overflow > 0 and idx >= 0:
+                shave = min(overflow, rest_lengths[idx] - self.min_len)
+                if shave > 0:
+                    rest_lengths[idx] -= shave
+                    overflow -= shave
+                idx -= 1
+
         # Insert the burst sequence at a random position within the batch
         burst_pos = int(torch.randint(0, batch_size, (1,), generator=rng).item())
         lengths = list(rest_lengths)
         lengths.insert(burst_pos, self.burst_len)
+
+        assert sum(lengths) <= self.max_total_tokens, (
+            f"BurstLengthSampler produced {sum(lengths)} tokens > "
+            f"max_total_tokens={self.max_total_tokens} (burst={self.burst_len}, "
+            f"n_rest={n_rest}, min_len={self.min_len})"
+        )
 
         return lengths
 
@@ -531,12 +560,18 @@ class SyntheticDataLoader:
             if vt > 0:
                 input_ids[i, :vt] = self.img_context_token_id
 
-            # Text positions: random token IDs (avoid 0=pad and img_context_token_id)
+            # Text positions: random token IDs (avoid 0=pad and img_context_token_id).
+            # Copy task: target at position t is input_ids[t]. The loss shifts
+            # labels left by 1 (shift_labels[t] = labels[t+1]), so we set
+            # labels = input_ids shifted right by 1 within the text span. The
+            # first text position has no predecessor → stays -100. This yields
+            # a learnable signal so loss actually decreases under synthetic data.
             if tt > 0:
                 text_toks = torch.randint(1, self.vocab_size, (tt,), generator=rng)
                 text_toks[text_toks == self.img_context_token_id] = 1
                 input_ids[i, vt:l] = text_toks
-                labels[i, vt:l] = text_toks
+                if tt > 1:
+                    labels[i, vt + 1:l] = text_toks[:-1]
 
             attention_mask[i, :l] = True
 

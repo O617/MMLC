@@ -13,69 +13,34 @@ export PYTORCH_NPU_ALLOC_CONF=expandable_segments:True
 export ACLNN_CACHE_LIMIT=100000
 export ASCEND_LAUNCH_BLOCKING=1
 export HCCL_IF_BASE_PORT=50000
-export HYBRID_PARALLEL=True
-export DESTROY_GROUP_POOL=1
-export USE_HYBRID_DATALOADER=0
+export HCCL_BUFFSIZE=200
 
 
 # 根据机器实际情况填写
-NPUS_PER_NODE=16
+NPUS_PER_NODE=4
 # 注意，当前为多机运行，需要根据实际的机器ip创建examples/internvl3/hostfile.txt文件，其中每行为一台机器的ip地址
-# HOSTFILE="examples/internvl3/hostfile.txt"
-# MASTER_ADDR=$(head -n1 $HOSTFILE | awk '{print $1;}')  # 获取hostfile第一行为masteraddr
-# MASTER_PORT=6000
-# # NODE_ADDR=`hostname -I | awk '{for(i=1;i<=NF;i++)print $i}' | grep ${MASTER_ADDR%.*}. | awk -F " " '{print$1}'`  # 获取本机IP
-# NODE_ADDR=$(hostname -I)
-# NODE_RANK=$(awk '{ranks[$1]=(FNR-1);}END{print ranks["'$NODE_ADDR'"];}' $HOSTFILE)
-# NNODES=$(cat $HOSTFILE | wc -l)
-# WORLD_SIZE=$(($NPUS_PER_NODE*$NNODES))
 HOSTFILE="examples/internvl3/hostfile.txt"
-MASTER_ADDR=$(head -n1 $HOSTFILE | awk '{print $1}')
+MASTER_ADDR=$(head -n1 $HOSTFILE | awk '{print $1;}')  # 获取hostfile第一行为masteraddr
 MASTER_PORT=6000
-
-# 获取本机所有 IP（按空格分隔）
-LOCAL_IPS=$(hostname -I)
-NODE_ADDR=""
-NODE_RANK=""
-
-# 逐个 IP 尝试匹配 hostfile
-for ip in $LOCAL_IPS; do
-    rank=$(awk -v ip="$ip" '$1 == ip {print NR-1; exit}' $HOSTFILE)
-    if [ -n "$rank" ]; then
-        NODE_ADDR=$ip
-        NODE_RANK=$rank
-        break
-    fi
-done
-
-if [ -z "$NODE_ADDR" ]; then
-    echo "错误：无法在 $HOSTFILE 中找到本机 IP"
-    echo "本机 IP 列表：$LOCAL_IPS"
-    exit 1
-fi
-
-NNODES=$(wc -l < $HOSTFILE)
-WORLD_SIZE=$(( NPUS_PER_NODE * NNODES ))
-
-# 可选：打印调试信息
-echo "本机 IP: $NODE_ADDR"
-echo "Rank: $NODE_RANK"
-echo "总节点数: $NNODES"
-
+NODE_ADDR=`hostname -I | awk '{for(i=1;i<=NF;i++)print $i}' | grep ${MASTER_ADDR%.*}. | awk -F " " '{print$1}'`  # 获取本机IP
+NODE_RANK=$(awk '{ranks[$1]=(FNR-1);}END{print ranks["'$NODE_ADDR'"];}' $HOSTFILE)
+# NNODES=$(cat $HOSTFILE | wc -l)
+NNODES=1
+WORLD_SIZE=$(($NPUS_PER_NODE*$NNODES))
 echo $MASTER_ADDR
 echo $NODE_ADDR
 echo $NODE_RANK
 echo $NNODES
 
-MBS=4
-GRAD_ACC_STEP=4
+MBS=2
+GRAD_ACC_STEP=8
 TP=1
 PP=1
 CP=2
 DP=$(($WORLD_SIZE/$TP/$PP/$CP))
 GBS=$(($MBS*$GRAD_ACC_STEP*$DP))
 
-MM_DATA="./examples/internvl3/data_8B_hybrid.json"
+MM_DATA="./examples/internvl3/data_8B.json"
 MM_MODEL="./examples/internvl3/model_8B.json"
 MM_TOOL="./mindspeed_mm/tools/tools.json"
 LOAD_PATH="./ckpt/mm_path/internvl3-8B"
@@ -90,15 +55,13 @@ MM_ARGS="
 DISTRIBUTED_ARGS="
     --nproc_per_node $NPUS_PER_NODE \
     --nnodes $NNODES \
-    --node_rank $NODE_RANK \
-    --master_addr $MASTER_ADDR \
-    --master_port $MASTER_PORT
+    --master_port 30000 \
 "
     # --node_rank $NODE_RANK \
     # --master_addr $MASTER_ADDR \
     # --master_port $MASTER_PORT
 
-
+    # --context-parallel-algo ulysses_cp_algo \
 GPT_ARGS="
     --tensor-model-parallel-size ${TP} \
     --pipeline-model-parallel-size ${PP} \
@@ -114,8 +77,7 @@ GPT_ARGS="
     --no-masked-softmax-fusion \
     --lr 2e-5 \
     --min-lr 0.0 \
-    --train-iters 20 \
-    --lr-decay-iters 5000 \
+    --train-iters 5000 \
     --lr-decay-style cosine \
     --weight-decay 0.05 \
     --clip-grad 1.0 \
@@ -129,10 +91,9 @@ GPT_ARGS="
     --use-distributed-optimizer \
     --use-flash-attn \
     --bf16 \
-    --load $LOAD_PATH \
     --variable-seq-lengths \
     --normalization RMSNorm \
-    --num-workers 8 \
+    --num-workers 2 \
     --calculate-per-sample-loss \
 "
 # To ensure code security, configure trust_remote_code to default to False.

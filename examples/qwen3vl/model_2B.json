@@ -1,12 +1,12 @@
 {
     "model_id": "qwen3_vl",
-    "init_from_hf_path": "./ckpt/hf_path/Qwen3-VL-4B",
+    "init_from_hf_path": "./ckpt/hf_path/Qwen3VL-2B-Instruct",
     "img_context_token_id": 151655,
     "image_encoder": {
         "vision_encoder": {
             "model_id": "qwen3vit",
-            "num_layers": 27,
-            "hidden_size": 1152,
+            "num_layers": 24,
+            "hidden_size": 1024,
             "num_attention_heads": 16,
             "freeze": true,
             "attn_implementation": "flash_attention_2",
@@ -21,9 +21,9 @@
     },
     "text_decoder": {
         "model_id": "qwen3lm",
-        "num_layers": 36,
-        "hidden_size": 4096,
-        "num_attention_heads": 32,
+        "num_layers": 28,
+        "hidden_size": 2048,
+        "num_attention_heads": 16,
         "max_position_embeddings": 262144,
         "freeze": false,
         "use_npu_fused_moe": false,
@@ -36,7 +36,7 @@
     "loss_cfg": {
         "compute_mode": "default",
         "chunk_size": 1024,
-        "loss_type": "default"
+        "loss_type": "per_sample_loss"
     },
     "patch": {
         "clip_grad_async": true

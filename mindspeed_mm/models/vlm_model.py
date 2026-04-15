@@ -432,6 +432,30 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
 
         return loss
 
+    def _chunked_vocab_parallel_ce(self, logits: torch.Tensor, labels: torch.Tensor, chunk_size: int = 512) -> torch.Tensor:
+        # Chunked vocab-parallel cross-entropy that avoids materializing the full
+        # fp32 logits tensor (which is V=151674 wide and OOMs at long T_local).
+        # Each chunk runs under torch.utils.checkpoint so the fp32 cast and the
+        # softmax activations are recomputed during backward instead of stored.
+        # logits: (B, T, V) bf16/fp16,  labels: (B, T)  →  loss: (B, T)
+        T = logits.shape[1]
+        if T <= chunk_size:
+            return tensor_parallel.vocab_parallel_cross_entropy(logits.float(), labels)
+
+        def _ce(lc, lb):
+            return tensor_parallel.vocab_parallel_cross_entropy(lc.float(), lb)
+
+        loss_chunks = []
+        for start in range(0, T, chunk_size):
+            end = min(start + chunk_size, T)
+            logits_chunk = logits[:, start:end, :]
+            labels_chunk = labels[:, start:end]
+            loss_chunk = torch.utils.checkpoint.checkpoint(
+                _ce, logits_chunk, labels_chunk, use_reentrant=False
+            )
+            loss_chunks.append(loss_chunk)
+        return torch.cat(loss_chunks, dim=1)
+
     def compute_loss_with_context_parallel(self, logits: torch.Tensor, labels: torch.Tensor, packed_seq_params=None) -> torch.Tensor:
         args = get_args()
         token_nums = None
@@ -528,8 +552,8 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
                 if mpu.get_context_parallel_rank() == mpu.get_context_parallel_world_size() - 1:
                     logits = logits[..., :-1, :].contiguous()
 
-            # Cross-entropy on the local CP chunk
-            loss_ = tensor_parallel.vocab_parallel_cross_entropy(logits.float(), labels)
+            # Cross-entropy on the local CP chunk (chunked to avoid full fp32 alloc)
+            loss_ = self._chunked_vocab_parallel_ce(logits, labels)
             loss = loss_ * (labels > -1)
 
             # Gather full-sequence loss and sample_ids from all CP ranks
@@ -565,15 +589,6 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
             # Uses 2-tuple return so schedules.py applies identical normalization
             loss_for_backward = per_sample_mean.mean()
             token_nums_mean = valid_tokens_per_sample.float().mean()
-
-            # === DIAG: per-sample loss in TND packed path (all ranks) ===
-            _diag_rank = torch.distributed.get_rank()
-            print(f"[DIAG-LOSS] rank={_diag_rank} path=TND_packed "
-                  f"num_subseq={num_subsequences} cp_size={cp_size} "
-                  f"valid_per_sample={valid_tokens_per_sample.tolist()} "
-                  f"per_sample_mean={per_sample_mean.tolist()} "
-                  f"mean_of_means={loss_for_backward.item():.6f}")
-            # === END DIAG ===
 
             return loss_for_backward, token_nums_mean
 
@@ -614,7 +629,7 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
             labels = split_forward_gather_backward_with_megatron_cp(shift_labels,
                                                                     get_context_parallel_group_for_hybrid_ring(), dim=1)
 
-        loss_ = tensor_parallel.vocab_parallel_cross_entropy(logits.float(), labels)
+        loss_ = self._chunked_vocab_parallel_ce(logits, labels)
         loss = loss_ * (labels > -1)
 
         # total_loss shape : [batch size, s]
@@ -629,14 +644,6 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
         #    Calculate per-sample average loss by first computing the average loss of valid tokens within each sample, then averaging across all samples
         if args.calculate_per_sample_loss:
             batch_mean_loss = total_loss.sum(dim=1) / token_nums
-            # === DIAG: per-sample loss in BSND path (all ranks) ===
-            _diag_rank = torch.distributed.get_rank()
-            print(f"[DIAG-LOSS] rank={_diag_rank} path=BSND "
-                  f"batch_size={total_loss.shape[0]} "
-                  f"token_nums_per_sample={token_nums.tolist()} "
-                  f"per_sample_mean={batch_mean_loss.tolist()} "
-                  f"mean_of_means={batch_mean_loss.mean().item():.6f}")
-            # === END DIAG ===
             total_loss = batch_mean_loss.mean()
             token_nums = token_nums.mean()
         elif args.calculate_per_token_loss:
@@ -811,6 +818,7 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
                                                                              rope_deltas=rope_deltas,
                                                                              inputs_embeds=input_embeds,
                                                                              cache_position=cache_position,
+                                                                             packed_seq_params=packed_seq_params,
                                                                              **kwargs)
             extra_block_kwargs = {}
             if deepstack_visual_embeds is not None and len(deepstack_visual_embeds) > 0:
@@ -828,7 +836,10 @@ class VLMModel(MultiModalModule, FSDP2Mixin, WeightInitMixin):
             )
 
             if self.text_decoder.post_process:
-                output = output.contiguous().float()
+                # Keep output in bf16/fp16 here; downstream loss paths chunk-cast
+                # to fp32 internally to avoid the full (T_local × V) materialization
+                # that OOMs at long sequence lengths.
+                output = output.contiguous()
                 loss_dict = {}
                 if labels is not None:
                     # Use per-sample CP loss path when:

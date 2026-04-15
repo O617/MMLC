@@ -34,6 +34,7 @@ from hybrid_dataloader import (
     make_pixel_loader,
 )
 from synthetic_dataloader import build_synthetic_dataloader
+from static_pack_dataloader import build_static_pack_dataloader
 from profiler import MLLMProfiler
 mindspeed_args = get_mindspeed_args()
 data_scheduler = None
@@ -68,6 +69,12 @@ def model_provider(pre_process=True, post_process=True, modules=None):
     _apply_freezing(model, vlm_config)
 
     global data_scheduler
+    # STATIC_PACK baseline (mirror of Qwen3VL path): fixed CP×DP topology, no
+    # Scheduler needed.  Megatron's --context-parallel-size handles CP; the
+    # static_pack dataloader produces TND packed batches directly.
+    if os.environ.get("STATIC_PACK", "").lower() == "true":
+        return model
+
     other_parallel_group_size = mpu.get_tensor_model_parallel_world_size() * mpu.get_pipeline_model_parallel_world_size()
     use_async = os.environ.get("ASYNC_SCHEDULE", "False") == "True"
     scheduler_cls = DoubleBufferedScheduler if use_async else Scheduler
@@ -192,23 +199,6 @@ def _apply_encoder_balance(batch, is_vit_last_stage):
         batch['tranfer'] = None
 
 
-def _diag_raw_batch(batch):
-    """Print diagnostic info for raw batch (before Scheduler)."""
-    _rank = torch.distributed.get_rank()
-    _raw_labels = batch.get('labels', None)
-    if _raw_labels is not None:
-        _raw_shape = tuple(_raw_labels.shape)
-        _raw_valid = int((_raw_labels > -1).sum())
-        _flat = _raw_labels.flatten()
-        _nonpad = _flat[_flat > -1][:20].tolist()
-        _label_sum = int(_flat[_flat > -1].sum())
-    else:
-        _raw_shape, _raw_valid, _nonpad, _label_sum = None, 0, [], 0
-    print(f"[DIAG-RAW] rank={_rank} labels_shape={_raw_shape} "
-          f"valid_tokens={_raw_valid} label_sum={_label_sum} "
-          f"first20_labels={_nonpad}")
-
-
 def get_batch(data_iterator, is_vit_last_stage=False):
     """Generate a batch."""
     if _hybrid_loader is not None:
@@ -221,8 +211,40 @@ def get_batch(data_iterator, is_vit_last_stage=False):
 
     # ── Non-hybrid path ──────────────────────────────────────────────
     batch = _load_raw_batch(data_iterator)
-    _diag_raw_batch(batch)
     _apply_encoder_balance(batch, is_vit_last_stage)
+
+    # STATIC_PACK baseline: dataloader yields a `seqlens` field (sub-seq
+    # lengths incl. tail padding) instead of constructed PackedSeqParams.
+    # Build the PackedSeqParams here so VLMModel's TND path consumes it
+    # identically to the Hybrid Scheduler-produced batches.
+    #
+    # For the Ulysses CP + packed path, MindSpeed's patched rotary uses
+    # ``cu_seqlens_q`` and its per-sample CP split utilities use
+    # ``cu_seqlens_q_padded``.  The static_pack dataloader already pads every
+    # sub-seq to ``2 × cp_size`` so both tensors share the same cumulative
+    # layout — we pass the same cu tensor as both fields, mirroring the
+    # Hybrid scheduler's convention (see scheduler.py:759).
+    if 'seqlens' in batch:
+        from megatron.core.packed_seq_params import PackedSeqParams
+        seqlens = batch.pop('seqlens')
+        if isinstance(seqlens, torch.Tensor):
+            seqlens = seqlens.to(torch.int32)
+        else:
+            seqlens = torch.tensor(seqlens, dtype=torch.int32)
+        cu = torch.zeros(seqlens.numel() + 1, dtype=torch.int32, device=seqlens.device)
+        cu[1:] = torch.cumsum(seqlens, dim=0)
+        cu = cu.to(device=torch.cuda.current_device())
+        max_seqlen = int(seqlens.max().item())
+        batch['packed_seq_params'] = PackedSeqParams(
+            cu_seqlens_q=cu,
+            cu_seqlens_kv=cu,
+            cu_seqlens_q_padded=cu,
+            cu_seqlens_kv_padded=cu,
+            qkv_format='thd',
+            max_seqlen_q=max_seqlen,
+            max_seqlen_kv=max_seqlen,
+        )
+
     return batch
 
 
@@ -307,7 +329,18 @@ def loss_func(output_tensor):
     num_samples = loss_dict.get('num_samples', 1)
 
     is_hybrid = os.environ.get("HYBRID_PARALLEL", None) == "True"
-    if is_hybrid:
+    is_static_pack = os.environ.get("STATIC_PACK", "").lower() == "true"
+    if is_hybrid or is_static_pack:
+        # Same SUM ÷ num_groups reduction for both Hybrid (BFD-dynamic CP
+        # groups, where mpu.get_context_parallel_world_size() varies per rank)
+        # and Static FFD baseline (uniform CP).  See Phase 15 in DEBUG_REPORT
+        # for the derivation: each rank's loss gets rescaled by
+        # num_samples/mbs_per_group, divided by its own (possibly dynamic)
+        # cp_size, then SUM-reduced across the world group.  The cp_size_g
+        # factor cancels because each dynamic group of size cp_size_g
+        # contributes cp_size_g identical copies, yielding
+        # `(Σ_g per_sample_sum_g) / mbs_per_group`, which divided by
+        # num_groups gives the canonical "mean over all samples in the GBS".
         cp_size = mpu.get_context_parallel_world_size()
         dp_cp_group = mpu.get_data_parallel_group(with_context_parallel=True)
 
@@ -321,10 +354,10 @@ def loss_func(output_tensor):
 
         # Rescale: raw loss is mean over this group's num_samples.
         # Multiply by (num_samples / mbs_per_group) so each sample contributes
-        # equal gradient weight regardless of BFD group size.
+        # equal weight regardless of BFD group size or static bucket size.
+        # No-op when num_samples == mbs_per_group.
         loss = loss * (num_samples / mbs_per_group)
 
-        # Logging: global mean = sum(loss_sum_g / MBS) / num_groups
         weighted_loss = loss.clone().detach() / cp_size
         averaged_loss = weighted_loss.view(1)
         torch.distributed.all_reduce(averaged_loss, group=dp_cp_group)
@@ -334,17 +367,6 @@ def loss_func(output_tensor):
 
     loss_dir["loss"] = averaged_loss[0]
     loss = loss.unsqueeze(0).clone()
-
-    # === DIAG: loss_func BSND/default path (all ranks) ===
-    _diag_rank = torch.distributed.get_rank()
-    _token_info = f" token_nums={token_nums.item():.0f}" if token_nums is not None else ""
-    _ns_info = f" num_samples={num_samples}"
-    print(f"[DIAG-LOSSFUNC] rank={_diag_rank} path=BSND_default "
-          f"raw_loss={loss_dict['loss'].item():.6f} "
-          f"logging_loss={averaged_loss[0].item():.6f} "
-          f"loss_for_backward={(loss / mpu.get_context_parallel_world_size()).squeeze().item():.6f}"
-          f"{_token_info}{_ns_info}")
-    # === END DIAG ===
 
     return loss / mpu.get_context_parallel_world_size(), loss_dir
 
@@ -372,11 +394,47 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
             args.micro_batch_size = pp_mbs * args.hetero_encoder_mbs_scale
 
     use_synthetic = os.environ.get("SYNTHETIC_DATA", "").lower() == "true"
+    use_static_pack = os.environ.get("STATIC_PACK", "").lower() == "true"
+    # Save original MBS up-front because both static_pack and hybrid branches
+    # temporarily inflate it for the inner SyntheticDataLoader.
+    micro_batch_size = args.micro_batch_size
+
+    if use_static_pack:
+        # Static-CP TND baseline.  Same recipe as pretrain_transformers.py:
+        # share SyntheticDataLoader (so per-step B=MBS×DP samples are byte-
+        # identical to the Hybrid burst run under the same seed) but assign
+        # samples to ranks via a deterministic FFD bin-packing into DP buckets,
+        # each capped at max_pack_seqlen=args.seq_length.  No Scheduler, no BFD.
+        cp_size = args.context_parallel_size
+        other_ps = (mpu.get_tensor_model_parallel_world_size()
+                    * mpu.get_pipeline_model_parallel_world_size())
+        dp_size = torch.distributed.get_world_size() // other_ps // cp_size
+        dp_rank = mpu.get_data_parallel_rank()
+        inflated_mbs = micro_batch_size * dp_size
+        args.micro_batch_size = inflated_mbs
+        train_dataloader = build_static_pack_dataloader(
+            inflated_batch_size=inflated_mbs,
+            dp_size=dp_size,
+            dp_rank=dp_rank,
+            cp_size=cp_size,
+            max_pack_seqlen=args.seq_length,
+        )
+        args.micro_batch_size = micro_batch_size
+        print_rank_0(
+            f"[StaticPack] InternVL3 static-CP TND baseline enabled — "
+            f"CP={cp_size}, DP={dp_size}, MBS_user={micro_batch_size}, "
+            f"inflated_B={inflated_mbs}, seq_length={args.seq_length}, "
+            f"min_len={os.environ.get('SYNTHETIC_MIN_LEN', 512)}, "
+            f"max_len={os.environ.get('SYNTHETIC_MAX_LEN', 8192)}, "
+            f"dist={os.environ.get('SYNTHETIC_LENGTH_DIST', 'uniform')}, "
+            f"num_batches={os.environ.get('SYNTHETIC_NUM_BATCHES', 1000)}"
+        )
+        train_dataloader, valid_dataloader, test_dataloader = build_iterations(train_dataloader)
+        return train_dataloader, valid_dataloader, test_dataloader
+
     if not use_synthetic:
         datasets = build_mm_dataset(data_config.dataset_param)
 
-    # Save original MBS before any temporary modifications
-    micro_batch_size = args.micro_batch_size
     is_hybrid = hybrid_parallel is not None and hybrid_parallel == "True"
 
     if is_hybrid:

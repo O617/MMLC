@@ -1,0 +1,31 @@
+{
+    "dataset_param": {
+        "dataset_type": "huggingface",
+        "basic_parameters": {
+            "dataset": "REPLACE_WITH_DATASET_NAME_OR_PATH",
+            "dataset_dir": "REPLACE_WITH_DATASET_DIR",
+            "split": "train",
+            "streaming": false,
+            "template": "qwen3_vl",
+            "cutoff_len": 4096
+        },
+        "preprocess_parameters": {
+            "model_name_or_path": "REPLACE_WITH_HF_MODEL_PATH",
+            "trust_remote_code": true,
+            "resize_vocab": false,
+            "preprocessing_num_workers": 4,
+            "overwrite_cache": false
+        }
+    },
+    "dataloader_param": {
+        "dataloader_mode": "sampler",
+        "sampler_type": "BaseRandomBatchSampler",
+        "shuffle": true,
+        "drop_last": true,
+        "pin_memory": true,
+        "collate_param": {
+            "model_name": "qwen3vl",
+            "ignore_pad_token_for_loss": true
+        }
+    }
+}

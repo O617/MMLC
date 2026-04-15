@@ -82,24 +82,6 @@ def _apply_encoder_balance(batch: Dict[str, Any], is_vit_last_stage: bool,
         batch['tranfer'] = None
 
 
-def _diag_raw_batch(batch: Dict[str, Any]) -> None:
-    """Diagnostic print for the raw batch (before Scheduler slicing)."""
-    rank = torch.distributed.get_rank()
-    labels = batch.get('labels')
-    if labels is not None:
-        shape = tuple(labels.shape)
-        flat = labels.flatten()
-        nonpad = flat[flat > -1]
-        valid = int(nonpad.numel())
-        label_sum = int(nonpad.sum())
-        first20 = nonpad[:20].tolist()
-    else:
-        shape, valid, label_sum, first20 = None, 0, 0, []
-    print(f"[DIAG-RAW] rank={rank} labels_shape={shape} "
-          f"valid_tokens={valid} label_sum={label_sum} "
-          f"first20_labels={first20}")
-
-
 # ---------------------------------------------------------------------------
 # HybridScheduledDataLoader
 # ---------------------------------------------------------------------------
@@ -177,7 +159,6 @@ class HybridScheduledDataLoader:
         batch = next(self._base_iter)           # may raise StopIteration
         _move_to_device(batch, self.float_dtype)
         _normalize_video_keys(batch)
-        _diag_raw_batch(batch)
         return batch
 
     def _prepare(self, batch: Dict[str, Any], is_vit_last_stage: bool) -> Dict[str, Any]:
