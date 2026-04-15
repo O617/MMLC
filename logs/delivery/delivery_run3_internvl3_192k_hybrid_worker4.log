@@ -1,0 +1,428 @@
+bash: /opt/conda/private/envs/MindSpeed-MM/lib/libtinfo.so.6: no version information available (required by bash)
+[synthetic-burst] WORLD_SIZE=64  DP=32  GBS=512
+[synthetic-burst] BURST_LEN=196608  BURST_PROB=0.5
+[synthetic-burst] token_budget=524288
+W0414 16:56:38.803000 369072 site-packages/torch/distributed/run.py:774] 
+W0414 16:56:38.803000 369072 site-packages/torch/distributed/run.py:774] *****************************************
+W0414 16:56:38.803000 369072 site-packages/torch/distributed/run.py:774] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0414 16:56:38.803000 369072 site-packages/torch/distributed/run.py:774] *****************************************
+[Rank 60 | Local Rank 12] 2026-04-14 16:56:53,186 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 52 | Local Rank 4] 2026-04-14 16:56:53,187 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 49 | Local Rank 1] 2026-04-14 16:56:53,187 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 53 | Local Rank 5] 2026-04-14 16:56:53,410 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 58 | Local Rank 10] 2026-04-14 16:56:53,466 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 51 | Local Rank 3] 2026-04-14 16:56:53,740 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 56 | Local Rank 8] 2026-04-14 16:56:53,816 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 57 | Local Rank 9] 2026-04-14 16:56:53,830 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 48 | Local Rank 0] 2026-04-14 16:56:53,832 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 54 | Local Rank 6] 2026-04-14 16:56:53,933 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 50 | Local Rank 2] 2026-04-14 16:56:53,938 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 63 | Local Rank 15] 2026-04-14 16:56:54,085 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 59 | Local Rank 11] 2026-04-14 16:56:54,096 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 62 | Local Rank 14] 2026-04-14 16:56:54,097 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 61 | Local Rank 13] 2026-04-14 16:56:54,126 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 55 | Local Rank 7] 2026-04-14 16:56:54,170 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directoryWARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/timm/models/layers/__init__.py:48: DeprecationWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", DeprecationWarning)
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: one_logger package is required to enable e2e metrics tracking. please go to https://confluence.nvidia.com/display/MLWFO/Package+Repositories for details to install it
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+WARNING: [dataset_param.basic_parameters.data_path] /home/lijia/develop/dataset/Intern-VL-Chat/mllm_format_ai2d_train_12k_data.json attempts to traverse to an disallowed directory
+WARNING: [dataset_param.basic_parameters.data_folder] /home/lijia/develop/dataset/Intern-VL-Chat/data/ai2d attempts to traverse to an disallowed directory
+[INFO] the original value of num_layers is None, now changed as 12 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 3584 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 28 which comes from model.json
+[INFO] the original value of num_query_groups is 1, now changed as 4 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of ffn_hidden_size is None, now changed as 18944 which comes from model.json
+[Gloo] Rank 24 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 26 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 25 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 30 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 29 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 28 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 27 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 31 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 29 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 28 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 24 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 30 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 25 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 26 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 27 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 31 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 48 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 49 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 63 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 50 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 51 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 53 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 52 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 54 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 57 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 60 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 58 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 55 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 56 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 61 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 59 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 62 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 50 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 48 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 49 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 51 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 52 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 53 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 54 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 57 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 61 is connected to [Gloo] Rank 63 peer ranks. Expected number of connected peer ranks is : 6355 is connected to 
+63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 56 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 58 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 59 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 60 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 62 is connected to 63 peer ranks. [Gloo] Rank Expected number of connected peer ranks is : 63
+63 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+(min, max) time across ranks (ms):
+    load-checkpoint ................................: (3.18, 7.01)
+[Rank 61 | Local Rank 13] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 59 | Local Rank 11] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 62 | Local Rank 14] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 63 | Local Rank 15] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 54 | Local Rank 6] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 53 | Local Rank 5] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 60 | Local Rank 12] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 57 | Local Rank 9] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 52 | Local Rank 4] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 49 | Local Rank 1] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 48 | Local Rank 0] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 58 | Local Rank 10] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 55 | Local Rank 7] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 50 | Local Rank 2] 2026-04-14 16:57:20,888 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 51 | Local Rank 3] 2026-04-14 16:57:20,889 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+[Rank 56 | Local Rank 8] 2026-04-14 16:57:20,891 WARNING [synthetic_dataloader:486] => [SyntheticData] min_seq_len=512 × vision_ratio=0.01 = 5 < tile_tokens=256. Some short sequences may have 0 vision tokens; the first sample in such batches will be forced to carry at least one tile to avoid Scheduler division-by-zero.
+(min, max) time across ranks (ms):
+    model-and-optimizer-setup ......................: (8930.70, 9007.09)
+    train/valid/test-data-iterators-setup ..........: (42.74, 57.43)
+[Rank 55 | Local Rank 7] 2026-04-14 16:57:23,720 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 51 | Local Rank 3] 2026-04-14 16:57:23,927 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 63 | Local Rank 15] 2026-04-14 16:57:23,970 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 57 | Local Rank 9] 2026-04-14 16:57:23,971 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 53 | Local Rank 5] 2026-04-14 16:57:24,347 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 59 | Local Rank 11] 2026-04-14 16:57:24,355 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 60 | Local Rank 12] 2026-04-14 16:57:24,362 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 62 | Local Rank 14] 2026-04-14 16:57:24,395 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 52 | Local Rank 4] 2026-04-14 16:57:24,408 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 49 | Local Rank 1] 2026-04-14 16:57:24,412 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 58 | Local Rank 10] 2026-04-14 16:57:24,445 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 56 | Local Rank 8] 2026-04-14 16:57:24,486 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 48 | Local Rank 0] 2026-04-14 16:57:24,501 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 50 | Local Rank 2] 2026-04-14 16:57:24,528 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 61 | Local Rank 13] 2026-04-14 16:57:24,586 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+[Rank 54 | Local Rank 6] 2026-04-14 16:57:24,613 WARNING [mindspeed.core.fusions.fused_rope:107] => Setting apply_rope_fusion to false because its implementation is not included in Apex. Try upgrading to the latest version
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+ [2026-04-14 16:57:57] iteration        1/      30 | consumed samples:          512 | elapsed time per iteration (ms): 36464.9 | learning rate: 2.000000E-06 | global batch size:   512 | tokens per sample: 5.087195E+04 | loss: 1.210312E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 16:58:06] iteration        2/      30 | consumed samples:         1024 | elapsed time per iteration (ms): 9356.4 | learning rate: 2.000000E-06 | global batch size:   512 | tokens per sample: 9.081438E+03 | loss: 1.209373E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 16:58:28] iteration        3/      30 | consumed samples:         1536 | elapsed time per iteration (ms): 21311.1 | learning rate: 1.999999E-06 | global batch size:   512 | tokens per sample: 5.099600E+04 | loss: 1.207076E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 16:58:59] iteration        4/      30 | consumed samples:         2048 | elapsed time per iteration (ms): 31041.6 | learning rate: 1.999998E-06 | global batch size:   512 | tokens per sample: 7.040572E+04 | loss: 1.205275E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 16:59:30] iteration        5/      30 | consumed samples:         2560 | elapsed time per iteration (ms): 30924.0 | learning rate: 1.999997E-06 | global batch size:   512 | tokens per sample: 7.188794E+04 | loss: 1.202593E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 16:59:58] iteration        6/      30 | consumed samples:         3072 | elapsed time per iteration (ms): 28775.9 | learning rate: 1.999995E-06 | global batch size:   512 | tokens per sample: 7.037391E+04 | loss: 1.198257E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:00:05] iteration        7/      30 | consumed samples:         3584 | elapsed time per iteration (ms): 6238.9 | learning rate: 1.999993E-06 | global batch size:   512 | tokens per sample: 8.950297E+03 | loss: 1.196955E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:00:25] iteration        8/      30 | consumed samples:         4096 | elapsed time per iteration (ms): 20853.9 | learning rate: 1.999990E-06 | global batch size:   512 | tokens per sample: 5.099364E+04 | loss: 1.194168E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:00:39] iteration        9/      30 | consumed samples:         4608 | elapsed time per iteration (ms): 13726.3 | learning rate: 1.999987E-06 | global batch size:   512 | tokens per sample: 2.845892E+04 | loss: 1.192054E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:01:00] iteration       10/      30 | consumed samples:         5120 | elapsed time per iteration (ms): 21153.6 | learning rate: 1.999984E-06 | global batch size:   512 | tokens per sample: 5.087862E+04 | loss: 1.186988E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:01:29] iteration       11/      30 | consumed samples:         5632 | elapsed time per iteration (ms): 28845.9 | learning rate: 1.999980E-06 | global batch size:   512 | tokens per sample: 7.034481E+04 | loss: 1.182595E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:01:50] iteration       12/      30 | consumed samples:         6144 | elapsed time per iteration (ms): 20876.5 | learning rate: 1.999976E-06 | global batch size:   512 | tokens per sample: 5.093536E+04 | loss: 1.181157E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:02:11] iteration       13/      30 | consumed samples:         6656 | elapsed time per iteration (ms): 21275.3 | learning rate: 1.999972E-06 | global batch size:   512 | tokens per sample: 4.939294E+04 | loss: 1.177831E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:02:17] iteration       14/      30 | consumed samples:         7168 | elapsed time per iteration (ms): 5891.8 | learning rate: 1.999967E-06 | global batch size:   512 | tokens per sample: 9.014641E+03 | loss: 1.175929E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:02:38] iteration       15/      30 | consumed samples:         7680 | elapsed time per iteration (ms): 21137.0 | learning rate: 1.999961E-06 | global batch size:   512 | tokens per sample: 5.094661E+04 | loss: 1.171039E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:02:59] iteration       16/      30 | consumed samples:         8192 | elapsed time per iteration (ms): 21053.1 | learning rate: 1.999956E-06 | global batch size:   512 | tokens per sample: 4.782367E+04 | loss: 1.168213E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:03:20] iteration       17/      30 | consumed samples:         8704 | elapsed time per iteration (ms): 20816.7 | learning rate: 1.999949E-06 | global batch size:   512 | tokens per sample: 4.937975E+04 | loss: 1.164504E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:03:41] iteration       18/      30 | consumed samples:         9216 | elapsed time per iteration (ms): 20836.0 | learning rate: 1.999943E-06 | global batch size:   512 | tokens per sample: 5.090522E+04 | loss: 1.160696E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:03:55] iteration       19/      30 | consumed samples:         9728 | elapsed time per iteration (ms): 13543.2 | learning rate: 1.999936E-06 | global batch size:   512 | tokens per sample: 3.000628E+04 | loss: 1.157217E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:04:23] iteration       20/      30 | consumed samples:        10240 | elapsed time per iteration (ms): 28320.2 | learning rate: 1.999929E-06 | global batch size:   512 | tokens per sample: 6.885291E+04 | loss: 1.150581E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:04:37] iteration       21/      30 | consumed samples:        10752 | elapsed time per iteration (ms): 13573.8 | learning rate: 1.999921E-06 | global batch size:   512 | tokens per sample: 3.002591E+04 | loss: 1.149019E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:04:50] iteration       22/      30 | consumed samples:        11264 | elapsed time per iteration (ms): 13500.7 | learning rate: 1.999913E-06 | global batch size:   512 | tokens per sample: 2.997178E+04 | loss: 1.144618E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:05:11] iteration       23/      30 | consumed samples:        11776 | elapsed time per iteration (ms): 21223.9 | learning rate: 1.999904E-06 | global batch size:   512 | tokens per sample: 5.096231E+04 | loss: 1.139333E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:05:32] iteration       24/      30 | consumed samples:        12288 | elapsed time per iteration (ms): 21031.4 | learning rate: 1.999896E-06 | global batch size:   512 | tokens per sample: 5.097123E+04 | loss: 1.135598E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:06:01] iteration       25/      30 | consumed samples:        12800 | elapsed time per iteration (ms): 28509.2 | learning rate: 1.999886E-06 | global batch size:   512 | tokens per sample: 6.880425E+04 | loss: 1.129681E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:06:30] iteration       26/      30 | consumed samples:        13312 | elapsed time per iteration (ms): 28798.4 | learning rate: 1.999877E-06 | global batch size:   512 | tokens per sample: 7.032178E+04 | loss: 1.127259E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:06:51] iteration       27/      30 | consumed samples:        13824 | elapsed time per iteration (ms): 20989.3 | learning rate: 1.999867E-06 | global batch size:   512 | tokens per sample: 5.092783E+04 | loss: 1.125438E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:06:56] iteration       28/      30 | consumed samples:        14336 | elapsed time per iteration (ms): 5793.3 | learning rate: 1.999856E-06 | global batch size:   512 | tokens per sample: 9.028125E+03 | loss: 1.122949E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:07:25] iteration       29/      30 | consumed samples:        14848 | elapsed time per iteration (ms): 28312.8 | learning rate: 1.999845E-06 | global batch size:   512 | tokens per sample: 6.726392E+04 | loss: 1.115719E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:07:53] iteration       30/      30 | consumed samples:        15360 | elapsed time per iteration (ms): 28726.4 | learning rate: 1.999834E-06 | global batch size:   512 | tokens per sample: 7.029698E+04 | loss: 1.110930E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

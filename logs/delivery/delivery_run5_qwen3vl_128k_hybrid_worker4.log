@@ -1,0 +1,812 @@
+bash: /opt/conda/private/envs/MindSpeed-MM/lib/libtinfo.so.6: no version information available (required by bash)
+[qwen3vl-burst] WORLD_SIZE=64  DP=32  GBS=256
+[qwen3vl-burst] BURST_LEN=131072  BURST_PROB=0.5
+[qwen3vl-burst] token_budget=524288
+W0414 17:24:27.813000 378757 site-packages/torch/distributed/run.py:774] 
+W0414 17:24:27.813000 378757 site-packages/torch/distributed/run.py:774] *****************************************
+W0414 17:24:27.813000 378757 site-packages/torch/distributed/run.py:774] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0414 17:24:27.813000 378757 site-packages/torch/distributed/run.py:774] *****************************************
+[Rank 53 | Local Rank 5] 2026-04-14 17:24:42,206 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 55 | Local Rank 7] 2026-04-14 17:24:42,427 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 50 | Local Rank 2] 2026-04-14 17:24:42,427 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 51 | Local Rank 3] 2026-04-14 17:24:42,552 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 56 | Local Rank 8] 2026-04-14 17:24:42,717 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 49 | Local Rank 1] 2026-04-14 17:24:42,737 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 54 | Local Rank 6] 2026-04-14 17:24:43,145 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 59 | Local Rank 11] 2026-04-14 17:24:43,216 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 60 | Local Rank 12] 2026-04-14 17:24:43,256 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 52 | Local Rank 4] 2026-04-14 17:24:43,301 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 57 | Local Rank 9] 2026-04-14 17:24:43,329 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 63 | Local Rank 15] 2026-04-14 17:24:43,406 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 61 | Local Rank 13] 2026-04-14 17:24:43,425 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+[Rank 48 | Local Rank 0] 2026-04-14 17:24:43,539 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+[Rank 58 | Local Rank 10] 2026-04-14 17:24:43,573 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+[Rank 62 | Local Rank 14] 2026-04-14 17:24:43,769 INFO [mindspeed.megatron_adaptor:33] => start to patch features in megatron adaptor.
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+Failed to import decord module. The reason of decord unavailable is No module named 'decord'
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+<frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+WARNING: one_logger package is required to enable e2e metrics tracking. please go to https://confluence.nvidia.com/display/MLWFO/Package+Repositories for details to install it
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[INFO] the original value of num_layers is None, now changed as 28 which comes from model.json
+[INFO] the original value of hidden_size is None, now changed as 2048 which comes from model.json
+[INFO] the original value of num_attention_heads is None, now changed as 16 which comes from model.json
+[INFO] the original value of max_position_embeddings is None, now changed as 262144 which comes from model.json
+[Gloo] Rank 26 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 27 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 26 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 25 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 24 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 29 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 25 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 30 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 28 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 30 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 31 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 27 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 24 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 31 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 29 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 28 is connected to 31 peer ranks. Expected number of connected peer ranks is : 31
+[Gloo] Rank 52 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 55 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 48 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 51 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 53 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 49 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 57 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 50 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 54 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 63 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 56 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank [Gloo] Rank 60 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+58 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 59 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 61 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 62 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 57 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 48 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 49 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 50 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 53 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 51 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 52 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 54 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 56 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 55 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 60 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 58 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 59 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 61 is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+[Gloo] Rank 62 is connected to 63 peer ranks. [Gloo] Rank Expected number of connected peer ranks is : 6363
+ is connected to 63 peer ranks. Expected number of connected peer ranks is : 63
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+/opt/conda/private/envs/MindSpeed-MM/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4807: UserWarning: No device id is provided via `init_process_group` or `barrier `. Using the current device set by the user. 
+  warnings.warn(  # warn only once
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Auto-discovering model: qwen3_vl
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utilsImporting module: mindspeed_mm.models.transformers.attention_utils
+
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.base_modelImporting module: mindspeed_mm.models.transformers.base_model
+
+Importing module: mindspeed_mm.models.transformers.base_modelImporting module: mindspeed_mm.models.transformers.base_model
+
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.attention_utils
+Importing module: mindspeed_mm.models.transformers.base_model
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuanImporting module: mindspeed_mm.models.transformers.configuration_hunyuan
+
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.configuration_hunyuan
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.cp_utils
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.custom_model_registry
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5vImporting module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.glm4_5v
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGenerationImporting module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGenerationSuccessfully registered model: glm4v_moe -> Glm4vMoeForConditionalGenerationImporting module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+
+
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moeImporting module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+
+Importing module: mindspeed_mm.models.transformers.global_varsImporting module: mindspeed_mm.models.transformers.global_vars
+
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipelineImporting module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Importing module: mindspeed_mm.models.transformers.internvl3_5Importing module: mindspeed_mm.models.transformers.internvl3_5
+
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Successfully registered model: glm4v_moe -> Glm4vMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.glm4v_moe.modeling_glm4v_moe
+Importing module: mindspeed_mm.models.transformers.global_vars
+Importing module: mindspeed_mm.models.transformers.hunyuan_image_3_pipeline
+Importing module: mindspeed_mm.models.transformers.internvl3_5Importing module: mindspeed_mm.models.transformers.internvl3_5
+
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Importing module: mindspeed_mm.models.transformers.internvl3_5
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Successfully registered model: internvl -> InternVLChatModelGenerationSuccessfully registered model: internvl -> InternVLChatModelGeneration
+
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Successfully registered model: internvl -> InternVLChatModelGenerationSuccessfully registered model: internvl -> InternVLChatModelGeneration
+
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.mistral3
+Importing module: mindspeed_mm.models.transformers.mistral3.mistral3
+Importing module: mindspeed_mm.models.transformers.mistral3.mistral3
+Importing module: mindspeed_mm.models.transformers.mistral3.mistral3Importing module: mindspeed_mm.models.transformers.mistral3.mistral3Importing module: mindspeed_mm.models.transformers.mistral3.mistral3
+
+
+Importing module: mindspeed_mm.models.transformers.mistral3.mistral3Importing module: mindspeed_mm.models.transformers.mistral3.mistral3
+
+Importing module: mindspeed_mm.models.transformers.mistral3.mistral3Importing module: mindspeed_mm.models.transformers.mistral3.mistral3
+
+Importing module: mindspeed_mm.models.transformers.mistral3.mistral3Importing module: mindspeed_mm.models.transformers.mistral3.mistral3Importing module: mindspeed_mm.models.transformers.mistral3.mistral3
+
+
+Importing module: mindspeed_mm.models.transformers.mistral3.mistral3
+Importing module: mindspeed_mm.models.transformers.mistral3.mistral3
+Successfully registered model: internvl -> InternVLChatModelGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.mistral3
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGenerationSuccessfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGenerationSuccessfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistralImporting module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+
+Importing module: mindspeed_mm.models.transformers.mistral3.modulesImporting module: mindspeed_mm.models.transformers.mistral3.modules
+
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.moe_utilsImporting module: mindspeed_mm.models.transformers.moe_utils
+
+Importing module: mindspeed_mm.models.transformers.modelhubSuccessfully registered model: mistral3 -> MultiModelMistral3ForConditionalGenerationImporting module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+
+
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistralImporting module: mindspeed_mm.models.transformers.modelhub
+
+Importing module: mindspeed_mm.models.transformers.moe_utilsImporting module: mindspeed_mm.models.transformers.mistral3.modules
+
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistralImporting module: mindspeed_mm.models.transformers.mistral3.modules
+
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputsImporting module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Successfully registered model: mistral3 -> MultiModelMistral3ForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.mistral3.modeling_mistral
+Importing module: mindspeed_mm.models.transformers.mistral3.modules
+Importing module: mindspeed_mm.models.transformers.modelhub
+Importing module: mindspeed_mm.models.transformers.moe_utils
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moeImporting module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modulesImporting module: mindspeed_mm.models.transformers.qwen3omni.modules
+
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omniImporting module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modulesImporting module: mindspeed_mm.models.transformers.qwen3omni.modules
+
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omniImporting module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_outputs
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moeImporting module: mindspeed_mm.models.transformers.qwen3vl.modules
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modulesImporting module: mindspeed_mm.models.transformers.qwen3vl.output
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.outputImporting module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.outputImporting module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vlImporting module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modulesImporting module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modulesImporting module: mindspeed_mm.models.transformers.qwen3vl.modules
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.outputImporting module: mindspeed_mm.models.transformers.qwen3vl.output
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vlImporting module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vlImporting module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGenerationImporting module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGenerationSuccessfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGenerationSuccessfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGenerationSuccessfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modeling_qwen3_omni_moe
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moeSuccessfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+🚨 `loss_ctx` is part of Qwen3OmniMoeThinkerForConditionalGeneration.forward's signature, but not documented. Make sure to add it to the docstring of the function in /data/user/user40/hybrid_parallel/MindSpeed-MM/mindspeed_mm/models/transformers/qwen3omni/modeling_qwen3_omni_moe.py.
+Importing module: mindspeed_mm.models.transformers.qwen3omni.modules
+Importing module: mindspeed_mm.models.transformers.qwen3omni.qwen3omni
+Successfully registered model: qwen3_omni_moe -> Qwen3OmniMoeThinkerForConditionalGeneration
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modeling_qwen3_vl_moe
+Importing module: mindspeed_mm.models.transformers.qwen3vl.modules
+Importing module: mindspeed_mm.models.transformers.qwen3vl.output
+Importing module: mindspeed_mm.models.transformers.qwen3vl.qwen3vl
+Successfully registered model: qwen3_vl -> Qwen3VLForConditionalGeneration
+Successfully registered model: qwen3_vl_moe -> Qwen3VLMoeForConditionalGeneration
+(min, max) time across ranks (ms):
+    load-checkpoint ................................: (7.41, 12.69)
+(min, max) time across ranks (ms):
+    model-and-optimizer-setup ......................: (13539.32, 13562.64)
+    train/valid/test-data-iterators-setup ..........: (35.70, 50.15)
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+/data/user/user40/hybrid_parallel/MindSpeed-MM/MindSpeed/mindspeed/core/fp8_utils.py:11: UserWarning: Currently, it is not supported to Cast shard fp32 main params to fp8 model params
+  warnings.warn("Currently, it is not supported to Cast shard fp32 main params to fp8 model params")
+ [2026-04-14 17:25:36] iteration        1/      30 | consumed samples:          256 | elapsed time per iteration (ms): 21766.7 | learning rate: 1.000000E-06 | global batch size:   256 | tokens per sample: 2.329841E+04 | loss: 1.107449E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:25:40] iteration        2/      30 | consumed samples:          512 | elapsed time per iteration (ms): 3756.5 | learning rate: 9.999999E-07 | global batch size:   256 | tokens per sample: 7.910277E+03 | loss: 1.099682E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:25:50] iteration        3/      30 | consumed samples:          768 | elapsed time per iteration (ms): 10093.1 | learning rate: 9.999996E-07 | global batch size:   256 | tokens per sample: 2.335824E+04 | loss: 1.097302E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:26:03] iteration        4/      30 | consumed samples:         1024 | elapsed time per iteration (ms): 12901.8 | learning rate: 9.999991E-07 | global batch size:   256 | tokens per sample: 3.095784E+04 | loss: 1.098757E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:26:15] iteration        5/      30 | consumed samples:         1280 | elapsed time per iteration (ms): 12249.2 | learning rate: 9.999984E-07 | global batch size:   256 | tokens per sample: 3.093477E+04 | loss: 1.066116E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:26:28] iteration        6/      30 | consumed samples:         1536 | elapsed time per iteration (ms): 12321.2 | learning rate: 9.999975E-07 | global batch size:   256 | tokens per sample: 3.086291E+04 | loss: 1.064080E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:26:31] iteration        7/      30 | consumed samples:         1792 | elapsed time per iteration (ms): 3198.3 | learning rate: 9.999964E-07 | global batch size:   256 | tokens per sample: 7.926051E+03 | loss: 1.046085E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:26:40] iteration        8/      30 | consumed samples:         2048 | elapsed time per iteration (ms): 9054.2 | learning rate: 9.999952E-07 | global batch size:   256 | tokens per sample: 2.332719E+04 | loss: 1.048747E+01 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:26:47] iteration        9/      30 | consumed samples:         2304 | elapsed time per iteration (ms): 7362.8 | learning rate: 9.999937E-07 | global batch size:   256 | tokens per sample: 1.550775E+04 | loss: 9.163241E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:26:56] iteration       10/      30 | consumed samples:         2560 | elapsed time per iteration (ms): 9012.4 | learning rate: 9.999920E-07 | global batch size:   256 | tokens per sample: 2.330703E+04 | loss: 9.096765E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:27:08] iteration       11/      30 | consumed samples:         2816 | elapsed time per iteration (ms): 11928.6 | learning rate: 9.999901E-07 | global batch size:   256 | tokens per sample: 3.102350E+04 | loss: 9.025736E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:27:17] iteration       12/      30 | consumed samples:         3072 | elapsed time per iteration (ms): 8883.4 | learning rate: 9.999881E-07 | global batch size:   256 | tokens per sample: 2.329416E+04 | loss: 8.933038E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:27:27] iteration       13/      30 | consumed samples:         3328 | elapsed time per iteration (ms): 9648.5 | learning rate: 9.999858E-07 | global batch size:   256 | tokens per sample: 2.309989E+04 | loss: 8.527579E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:27:30] iteration       14/      30 | consumed samples:         3584 | elapsed time per iteration (ms): 3079.9 | learning rate: 9.999833E-07 | global batch size:   256 | tokens per sample: 7.910609E+03 | loss: 8.446626E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:27:39] iteration       15/      30 | consumed samples:         3840 | elapsed time per iteration (ms): 8845.4 | learning rate: 9.999807E-07 | global batch size:   256 | tokens per sample: 2.324689E+04 | loss: 8.375690E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:27:48] iteration       16/      30 | consumed samples:         4096 | elapsed time per iteration (ms): 8974.9 | learning rate: 9.999778E-07 | global batch size:   256 | tokens per sample: 2.303570E+04 | loss: 5.356037E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:27:57] iteration       17/      30 | consumed samples:         4352 | elapsed time per iteration (ms): 8960.6 | learning rate: 9.999747E-07 | global batch size:   256 | tokens per sample: 2.335263E+04 | loss: 4.717333E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:28:06] iteration       18/      30 | consumed samples:         4608 | elapsed time per iteration (ms): 9796.7 | learning rate: 9.999715E-07 | global batch size:   256 | tokens per sample: 2.335725E+04 | loss: 4.622890E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:28:12] iteration       19/      30 | consumed samples:         4864 | elapsed time per iteration (ms): 5963.4 | learning rate: 9.999680E-07 | global batch size:   256 | tokens per sample: 1.560700E+04 | loss: 4.543605E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:28:24] iteration       20/      30 | consumed samples:         5120 | elapsed time per iteration (ms): 11927.2 | learning rate: 9.999644E-07 | global batch size:   256 | tokens per sample: 3.074009E+04 | loss: 4.299513E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:28:30] iteration       21/      30 | consumed samples:         5376 | elapsed time per iteration (ms): 5907.4 | learning rate: 9.999605E-07 | global batch size:   256 | tokens per sample: 1.561353E+04 | loss: 4.245996E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:28:37] iteration       22/      30 | consumed samples:         5632 | elapsed time per iteration (ms): 6489.6 | learning rate: 9.999565E-07 | global batch size:   256 | tokens per sample: 1.561875E+04 | loss: 4.121287E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:28:46] iteration       23/      30 | consumed samples:         5888 | elapsed time per iteration (ms): 9202.4 | learning rate: 9.999522E-07 | global batch size:   256 | tokens per sample: 2.331434E+04 | loss: 3.824317E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:28:55] iteration       24/      30 | consumed samples:         6144 | elapsed time per iteration (ms): 9184.8 | learning rate: 9.999478E-07 | global batch size:   256 | tokens per sample: 2.327261E+04 | loss: 3.419663E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:29:07] iteration       25/      30 | consumed samples:         6400 | elapsed time per iteration (ms): 12158.3 | learning rate: 9.999432E-07 | global batch size:   256 | tokens per sample: 3.072483E+04 | loss: 3.223958E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:29:19] iteration       26/      30 | consumed samples:         6656 | elapsed time per iteration (ms): 12169.8 | learning rate: 9.999383E-07 | global batch size:   256 | tokens per sample: 3.094310E+04 | loss: 3.109033E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:29:29] iteration       27/      30 | consumed samples:         6912 | elapsed time per iteration (ms): 9122.9 | learning rate: 9.999333E-07 | global batch size:   256 | tokens per sample: 2.333887E+04 | loss: 2.955255E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:29:32] iteration       28/      30 | consumed samples:         7168 | elapsed time per iteration (ms): 3054.2 | learning rate: 9.999281E-07 | global batch size:   256 | tokens per sample: 7.838734E+03 | loss: 2.887857E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:29:44] iteration       29/      30 | consumed samples:         7424 | elapsed time per iteration (ms): 12051.3 | learning rate: 9.999226E-07 | global batch size:   256 | tokens per sample: 3.068373E+04 | loss: 2.689679E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-04-14 17:29:56] iteration       30/      30 | consumed samples:         7680 | elapsed time per iteration (ms): 11990.5 | learning rate: 9.999170E-07 | global batch size:   256 | tokens per sample: 3.084117E+04 | loss: 1.224801E+00 | loss scale: 1.0 | num zeros: 0.0 | number of skipped iterations:   0 | number of nan iterations:   0 |
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
